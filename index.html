@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Network Congestion Prediction - Smart Campus Networks</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #050a12;
+      --bg-secondary: #0c1220;
+      --bg-card: rgba(15, 25, 40, 0.7);
+      --border-color: rgba(0, 212, 170, 0.15);
+      --accent: #00d4aa;
+      --accent-glow: rgba(0, 212, 170, 0.3);
+      --warning: #ff6b35;
+      --danger: #ff3860;
+      --success: #00d4aa;
+      --text-primary: #e8f0f5;
+      --text-secondary: #7a8a9a;
+      --text-muted: #4a5a6a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Network Canvas Background */
+    #networkCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(0, 212, 170, 0.35);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 40px var(--accent-glow);
+    }
+
+    /* Navigation */
+    .nav-link {
+      position: relative;
+      color: var(--text-secondary);
+      transition: color 0.3s ease;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #00a88a);
+      color: var(--bg-primary);
+      font-weight: 600;
+      padding: 14px 32px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 30px var(--accent-glow);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    /* Input Styling */
+    .input-field {
+      background: rgba(5, 15, 25, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Status Cards */
+    .status-normal {
+      border-color: var(--success);
+      box-shadow: 0 0 30px rgba(0, 212, 170, 0.2);
+    }
+
+    .status-congestion {
+      border-color: var(--danger);
+      box-shadow: 0 0 30px rgba(255, 56, 96, 0.3);
+      animation: pulse-danger 2s infinite;
+    }
+
+    @keyframes pulse-danger {
+      0%, 100% { box-shadow: 0 0 30px rgba(255, 56, 96, 0.3); }
+      50% { box-shadow: 0 0 50px rgba(255, 56, 96, 0.5); }
+    }
+
+    /* Traffic Indicator */
+    .traffic-indicator {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .traffic-flow {
+      position: absolute;
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: flow 2s linear infinite;
+    }
+
+    @keyframes flow {
+      0% { left: -30%; }
+      100% { left: 100%; }
+    }
+
+    /* Loading Spinner */
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border-color);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Architecture Diagram */
+    .arch-node {
+      transition: all 0.3s ease;
+    }
+
+    .arch-node:hover {
+      transform: scale(1.1);
+      box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3);
+    }
+
+    .arch-arrow {
+      animation: arrow-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes arrow-pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* Scroll Reveal Animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Chart Container */
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+
+    /* Gradient Overlays */
+    .gradient-overlay {
+      background: linear-gradient(180deg, 
+        var(--bg-primary) 0%, 
+        transparent 30%, 
+        transparent 70%, 
+        var(--bg-primary) 100%
+      );
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Focus States */
+    *:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Counter Animation */
+    .counter {
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Network Background Canvas -->
+  <canvas id="networkCanvas"></canvas>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass-card border-0 border-b" style="border-radius: 0;">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
+            <svg class="w-6 h-6 text-[#050a12]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+            </svg>
+          </div>
+          <span class="font-mono text-sm font-semibold text-[#00d4aa]">NetAI Monitor</span>
+        </div>
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#home" class="nav-link text-sm font-medium">Home</a>
+          <a href="#about" class="nav-link text-sm font-medium">About</a>
+          <a href="#monitor" class="nav-link text-sm font-medium">Network Monitor</a>
+          <a href="#analytics" class="nav-link text-sm font-medium">Analytics</a>
+          <a href="#architecture" class="nav-link text-sm font-medium">Architecture</a>
+          <a href="#results" class="nav-link text-sm font-medium">Results</a>
+        </div>
+        <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg hover:bg-[rgba(0,212,170,0.1)]" aria-label="Toggle menu">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="hidden md:hidden bg-[rgba(5,10,20,0.98)] border-t border-[rgba(0,212,170,0.1)]">
+      <div class="px-4 py-4 space-y-3">
+        <a href="#home" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Home</a>
+        <a href="#about" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">About</a>
+        <a href="#monitor" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Network Monitor</a>
+        <a href="#analytics" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Analytics</a>
+        <a href="#architecture" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Architecture</a>
+        <a href="#results" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Results</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Home Section -->
+  <section id="home" class="relative min-h-screen flex items-center justify-center px-4 pt-16">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(0,212,170,0.03)] to-transparent pointer-events-none"></div>
+    <div class="relative z-10 text-center max-w-4xl mx-auto reveal">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-8">
+        <span class="w-2 h-2 rounded-full bg-[#00d4aa] animate-pulse"></span>
+        <span class="text-sm font-mono text-[#00d4aa]">AI-Powered Network Analysis</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+        <span class="text-[#e8f0f5]">Machine Learning Based</span><br>
+        <span class="bg-gradient-to-r from-[#00d4aa] to-[#00a88a] bg-clip-text text-transparent">Network Congestion Prediction</span>
+      </h1>
+      <p class="text-lg sm:text-xl text-[#7a8a9a] max-w-2xl mx-auto mb-10 leading-relaxed">
+        Advanced prediction system for smart campus networks. Analyze bandwidth usage, network delay, and packet loss to predict and prevent congestion before it impacts users.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="#monitor" class="btn-primary text-base">
+          Start Monitoring
+        </a>
+        <a href="#about" class="px-8 py-4 rounded-xl border border-[rgba(0,212,170,0.3)] text-[#00d4aa] font-medium hover:bg-[rgba(0,212,170,0.1)] transition-all">
+          Learn More
+        </a>
+      </div>
+      <!-- Live Stats -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-16">
+        <div class="glass-card p-4">
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="99.7">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Prediction Accuracy %</div>
+        </div>
+        <div class="glass-card p-4">
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="2.3">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Avg Response (ms)</div>
+        </div>
+        <div class="glass-card p-4">
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="847">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Active Nodes</div>
+        </div>
+        <div class="glass-card p-4">
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="24">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Hours Uptime</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="relative py-24 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">UNDERSTANDING CONGESTION</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Why Network Congestion Matters</h2>
+        <p class="text-[#7a8a9a] max-w-2xl mx-auto">Understanding the root causes and impacts of network congestion in campus environments</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6 reveal">
+        <!-- Card 1 -->
+        <div class="glass-card p-8 group">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ff6b35] to-[#ff8f65] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">What is Network Congestion</h3>
+          <p class="text-[#7a8a9a] text-sm leading-relaxed">
+            Network congestion occurs when the demand for bandwidth exceeds the available capacity, causing data packets to queue, resulting in increased latency, packet loss, and degraded application performance across the network.
+          </p>
+        </div>
+        <!-- Card 2 -->
+        <div class="glass-card p-8 group">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ffd93d] to-[#ffb700] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <svg class="w-7 h-7 text-[#050a12]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">Why It Happens in Campus Networks</h3>
+          <p class="text-[#7a8a9a] text-sm leading-relaxed">
+            Campus networks face unique challenges: thousands of simultaneous users during peak hours, bandwidth-intensive applications like video streaming and online gaming, peer-to-peer file sharing, and limited infrastructure budgets.
+          </p>
+        </div>
+        <!-- Card 3 -->
+        <div class="glass-card p-8 group">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">How ML Predicts Congestion</h3>
+          <p class="text-[#7a8a9a] text-sm leading-relaxed">
+            Machine learning models analyze historical and real-time network metrics like bandwidth utilization, round-trip delay, and packet loss patterns to identify early warning signs and predict congestion before it becomes critical.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Network Monitor Section -->
+  <section id="monitor" class="relative py-24 px-4">
+    <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,212,170,0.02)] to-transparent pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">LIVE PREDICTION</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Congestion Predictor</h2>
+        <p class="text-[#7a8a9a] max-w-2xl mx-auto">Enter network parameters to analyze congestion risk using our ML-powered prediction engine</p>
+      </div>
+      
+      <div class="grid lg:grid-cols-2 gap-8 reveal">
+        <!-- Input Panel -->
+        <div class="glass-card p-8">
+          <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
+            <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Input Parameters
+          </h3>
+          <form id="predictionForm" class="space-y-6">
+            <!-- Bandwidth Usage -->
+            <div>
+              <label class="block text-sm font-medium text-[#7a8a9a] mb-2">
+                Bandwidth Usage (%)
+                <span class="text-[#00d4aa] font-mono text-xs ml-2">Range: 0-100</span>
+              </label>
+              <div class="relative">
+                <input type="number" id="bandwidth" class="input-field pr-16" placeholder="Enter bandwidth usage" min="0" max="100" value="75" required>
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a5a6a] font-mono">%</span>
+              </div>
+              <div class="mt-2 h-1 bg-[#0c1220] rounded-full overflow-hidden">
+                <div id="bandwidthBar" class="h-full bg-gradient-to-r from-[#00d4aa] to-[#00a88a] transition-all duration-500" style="width: 75%"></div>
+              </div>
+            </div>
+            <!-- Network Delay -->
+            <div>
+              <label class="block text-sm font-medium text-[#7a8a9a] mb-2">
+                Network Delay (ms)
+                <span class="text-[#00d4aa] font-mono text-xs ml-2">Range: 0-200</span>
+              </label>
+              <div class="relative">
+                <input type="number" id="delay" class="input-field pr-16" placeholder="Enter network delay" min="0" max="200" value="45" required>
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a5a6a] font-mono">ms</span>
+              </div>
+              <div class="mt-2 h-1 bg-[#0c1220] rounded-full overflow-hidden">
+                <div id="delayBar" class="h-full bg-gradient-to-r from-[#ffd93d] to-[#ff6b35] transition-all duration-500" style="width: 22.5%"></div>
+              </div>
+            </div>
+            <!-- Packet Loss -->
+            <div>
+              <label class="block text-sm font-medium text-[#7a8a9a] mb-2">
+                Packet Loss (%)
+                <span class="text-[#00d4aa] font-mono text-xs ml-2">Range: 0-10</span>
+              </label>
+              <div class="relative">
+                <input type="number" id="packetLoss" class="input-field pr-16" placeholder="Enter packet loss" min="0" max="10" step="0.1" value="1.5" required>
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a5a6a] font-mono">%</span>
+              </div>
+              <div class="mt-2 h-1 bg-[#0c1220] rounded-full overflow-hidden">
+                <div id="packetBar" class="h-full bg-gradient-to-r from-[#ff3860] to-[#ff6b35] transition-all duration-500" style="width: 15%"></div>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary w-full flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+              Predict Congestion
+            </button>
+          </form>
+        </div>
+
+        <!-- Result Panel -->
+        <div class="glass-card p-8">
+          <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
+            <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Prediction Result
+          </h3>
+          <!-- Loading State -->
+          <div id="loadingState" class="hidden flex flex-col items-center justify-center py-12">
+            <div class="loader mb-4"></div>
+            <span class="text-[#7a8a9a] text-sm">Analyzing network parameters...</span>
+          </div>
+          <!-- Result State -->
+          <div id="resultState">
+            <div id="resultCard" class="glass-card p-6 border-2 transition-all duration-500">
+              <div class="flex items-center gap-4 mb-4">
+                <div id="statusIcon" class="w-16 h-16 rounded-xl flex items-center justify-center transition-all">
+                  <!-- Dynamic Icon -->
+                </div>
+                <div>
+                  <div id="statusLabel" class="text-2xl font-bold"></div>
+                  <div id="statusDesc" class="text-sm text-[#7a8a9a]"></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-4 mt-6">
+                <div class="text-center p-3 rounded-lg bg-[rgba(0,212,170,0.05)]">
+                  <div id="resultBandwidth" class="text-lg font-mono font-bold text-[#00d4aa]">--</div>
+                  <div class="text-xs text-[#7a8a9a]">Bandwidth</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[rgba(255,217,61,0.05)]">
+                  <div id="resultDelay" class="text-lg font-mono font-bold text-[#ffd93d]">--</div>
+                  <div class="text-xs text-[#7a8a9a]">Delay</div>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-[rgba(255,56,96,0.05)]">
+                  <div id="resultLoss" class="text-lg font-mono font-bold text-[#ff3860]">--</div>
+                  <div class="text-xs text-[#7a8a9a]">Loss</div>
+                </div>
+              </div>
+            </div>
+            <!-- Risk Assessment -->
+            <div class="mt-6">
+              <div class="text-sm text-[#7a8a9a] mb-2">Risk Assessment</div>
+              <div class="h-3 bg-[#0c1220] rounded-full overflow-hidden">
+                <div id="riskBar" class="h-full bg-gradient-to-r from-[#00d4aa] via-[#ffd93d] to-[#ff3860] transition-all duration-700" style="width: 25%"></div>
+              </div>
+              <div class="flex justify-between text-xs text-[#4a5a6a] mt-1">
+                <span>Low</span>
+                <span>Medium</span>
+                <span>High</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Analytics Section -->
+  <section id="analytics" class="relative py-24 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">REAL-TIME ANALYTICS</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Performance Dashboard</h2>
+        <p class="text-[#7a8a9a] max-w-2xl mx-auto">Monitor key network metrics with live updating visualizations</p>
+      </div>
+
+      <!-- Traffic Indicator -->
+      <div class="glass-card p-4 mb-8 reveal">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium">Live Network Traffic</span>
+          <span class="text-xs font-mono text-[#00d4aa]">Active</span>
+        </div>
+        <div class="traffic-indicator">
+          <div class="traffic-flow"></div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6 reveal">
+        <!-- Bandwidth Chart -->
+        <div class="glass-card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#00d4aa]"></span>
+              Bandwidth Usage
+            </h3>
+            <span id="bandwidthAvg" class="text-xs font-mono text-[#7a8a9a]">Avg: --</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="bandwidthChart"></canvas>
+          </div>
+        </div>
+        <!-- Delay Chart -->
+        <div class="glass-card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#ffd93d]"></span>
+              Network Delay Trend
+            </h3>
+            <span id="delayAvg" class="text-xs font-mono text-[#7a8a9a]">Avg: --</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="delayChart"></canvas>
+          </div>
+        </div>
+        <!-- Packet Loss Chart -->
+        <div class="glass-card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#ff3860]"></span>
+              Packet Loss Statistics
+            </h3>
+            <span id="lossAvg" class="text-xs font-mono text-[#7a8a9a]">Avg: --</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="packetLossChart"></canvas>
+          </div>
+        </div>
+        <!-- Traffic Distribution -->
+        <div class="glass-card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#a78bfa]"></span>
+              Traffic Load Distribution
+            </h3>
+            <span class="text-xs font-mono text-[#7a8a9a]">Current</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="trafficChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Section -->
+  <section id="architecture" class="relative py-24 px-4">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(0,212,170,0.02)] to-transparent pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">SYSTEM DESIGN</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Architecture</h2>
+        <p class="text-[#7a8a9a] max-w-2xl mx-auto">End-to-end data flow from user devices to congestion alerts</p>
+      </div>
+
+      <!-- Architecture Diagram -->
+      <div class="glass-card p-8 reveal">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-2">
+          <!-- User Devices -->
+          <div class="arch-node glass-card p-6 text-center min-w-[140px]">
+            <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center mb-3">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <div class="font-semibold text-sm">User Devices</div>
+            <div class="text-xs text-[#7a8a9a] mt-1">End Users</div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="arch-arrow hidden lg:flex items-center">
+            <div class="w-8 h-0.5 bg-gradient-to-r from-[#00d4aa] to-transparent"></div>
+            <svg class="w-6 h-6 text-[#00d4aa]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </div>
+          <div class="arch-arrow lg:hidden transform rotate-90">
+            <svg class="w-6 h-6 text-[#00d4aa]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </div>
+
+          <!-- Router -->
+          <div class="arch-node glass-card p-6 text-center min-w-[140px]">
+            <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#ffd93d] to-[#ff8f65] flex items-center justify-center mb-3">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+              </svg>
+            </div>
+            <div class="font-semibold text-sm">Router</div>
+            <div class="text-xs text-[#7a8a9a] mt-1">Network Gateway</div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="arch-arrow hidden lg:flex items-center">
+            <div class="w-8 h-0.5 bg-gradient-to-r from-[#ffd93d] to-transparent"></div>
+            <svg class="w-6 h-6 text-[#ffd93d]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </div>
+          <div class="arch-arrow lg:hidden transform rotate-90">
+            <svg class="w-6 h-6 text-[#ffd93d]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </div>
+
+          <!-- Monitoring System -->
+          <div class="arch-node glass-card p-6 text-center min-w-[140px]">
+            <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] flex items-center justify-center mb-3">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <div class="font-semibold text-sm">Monitoring</div>
+            <div class="text-xs text-[#7a8a9a] mt-1">Data Collection</div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="arch-arrow hidden lg:flex items-center">
+            <div class="w-8 h-0.5 bg-gradient-to-r from-[#38bdf8] to-transparent"></div>
+            <svg class="w-6 h-6 text-[#38bdf8]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </div>
+          <div class="arch-arrow lg:hidden transform rotate-90">
+            <svg class="w-6 h-6 text-[#38bdf8]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </div>
+
+          <!-- ML Engine -->
+          <div class="arch-node glass-card p-6 text-center min-w-[140px]">
+            <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] flex items-center justify-center mb-3">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+            </div>
+            <div class="font-semibold text-sm">ML Engine</div>
+            <div class="text-xs text-[#7a8a9a] mt-1">Prediction</div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="arch-arrow hidden lg:flex items-center">
+            <div class="w-8 h-0.5 bg-gradient-to-r from-[#a78bfa] to-transparent"></div>
+            <svg class="w-6 h-6 text-[#a78bfa]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </div>
+          <div class="arch-arrow lg:hidden transform rotate-90">
+            <svg class="w-6 h-6 text-[#a78bfa]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </div>
+
+          <!-- Alert System -->
+          <div class="arch-node glass-card p-6 text-center min-w-[140px]">
+            <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#ff3860] to-[#ff6b35] flex items-center justify-center mb-3">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+            </div>
+            <div class="font-semibold text-sm">Alert System</div>
+            <div class="text-xs text-[#7a8a9a] mt-1">Notifications</div>
+          </div>
+        </div>
+
+        <!-- Flow Description -->
+        <div class="mt-8 p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
+          <div class="text-sm text-[#7a8a9a]">
+            <span class="text-[#00d4aa] font-medium">Data Flow:</span> Network traffic from user devices passes through the router where it is monitored in real-time. The monitoring system collects metrics (bandwidth, delay, packet loss) and sends them to the ML prediction engine. The AI model analyzes patterns and triggers alerts when congestion is predicted.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results Section -->
+  <section id="results" class="relative py-24 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">PERFORMANCE METRICS</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">System Benefits</h2>
+        <p class="text-[#7a8a9a] max-w-2xl mx-auto">Measurable improvements in network performance after implementing the ML-based prediction system</p>
+      </div>
+
+      <!-- Benefits Cards -->
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 reveal">
+        <div class="glass-card p-6 text-center group">
+          <div class="w-16 h-16 mx-auto rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+          </div>
+          <div class="text-3xl font-bold text-[#00d4aa] font-mono mb-2">67%</div>
+          <div class="text-sm text-[#7a8a9a]">Reduced Packet Loss</div>
+        </div>
+        <div class="glass-card p-6 text-center group">
+          <div class="w-16 h-16 mx-auto rounded-xl bg-gradient-to-br from-[#ffd93d] to-[#ff8f65] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div class="text-3xl font-bold text-[#ffd93d] font-mono mb-2">45%</div>
+          <div class="text-sm text-[#7a8a9a]">Lower Network Delay</div>
+        </div>
+        <div class="glass-card p-6 text-center group">
+          <div class="w-16 h-16 mx-auto rounded-xl bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <div class="text-3xl font-bold text-[#38bdf8] font-mono mb-2">32%</div>
+          <div class="text-sm text-[#7a8a9a]">Better Bandwidth Utilization</div>
+        </div>
+        <div class="glass-card p-6 text-center group">
+          <div class="w-16 h-16 mx-auto rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+          </div>
+          <div class="text-3xl font-bold text-[#a78bfa] font-mono mb-2">89%</div>
+          <div class="text-sm text-[#7a8a9a]">Early Detection Rate</div>
+        </div>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="glass-card p-8 reveal">
+        <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
+          <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          Performance Comparison
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-[rgba(0,212,170,0.15)]">
+                <th class="text-left py-4 px-4 text-[#7a8a9a] font-medium">Metric</th>
+                <th class="text-center py-4 px-4 text-[#ff3860] font-medium">Before System</th>
+                <th class="text-center py-4 px-4 text-[#00d4aa] font-medium">After System</th>
+                <th class="text-center py-4 px-4 text-[#7a8a9a] font-medium">Improvement</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-[rgba(0,212,170,0.08)] hover:bg-[rgba(0,212,170,0.03)] transition-colors">
+                <td class="py-4 px-4">Avg Packet Loss</td>
+                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">4.8%</td>
+                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">1.6%</td>
+                <td class="text-center py-4 px-4">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[rgba(0,212,170,0.15)] text-[#00d4aa]">+67%</span>
+                </td>
+              </tr>
+              <tr class="border-b border-[rgba(0,212,170,0.08)] hover:bg-[rgba(0,212,170,0.03)] transition-colors">
+                <td class="py-4 px-4">Avg Network Delay</td>
+                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">78ms</td>
+                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">43ms</td>
+                <td class="text-center py-4 px-4">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[rgba(0,212,170,0.15)] text-[#00d4aa]">+45%</span>
+                </td>
+              </tr>
+              <tr class="border-b border-[rgba(0,212,170,0.08)] hover:bg-[rgba(0,212,170,0.03)] transition-colors">
+                <td class="py-4 px-4">Bandwidth Efficiency</td>
+                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">58%</td>
+                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">85%</td>
+                <td class="text-center py-4 px-4">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[rgba(0,212,170,0.15)] text-[#00d4aa]">+47%</span>
+                </td>
+              </tr>
+              <tr class="hover:bg-[rgba(0,212,170,0.03)] transition-colors">
+                <td class="py-4 px-4">Congestion Detection</td>
+                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">Reactive</td>
+                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">Proactive</td>
+                <td class="text-center py-4 px-4">
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[rgba(0,212,170,0.15)] text-[#00d4aa]">Predictive</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="relative py-12 px-4 border-t border-[rgba(0,212,170,0.1)]">
+    <div class="max-w-7xl mx-auto">
+      <div class="glass-card p-8 reveal">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
+              <svg class="w-6 h-6 text-[#050a12]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="font-semibold text-lg">Machine Learning Based Network Congestion Prediction</div>
+              <div class="text-sm text-[#7a8a9a]">Smart Campus Networks Project</div>
+            </div>
+          </div>
+          <div class="text-center md:text-right">
+            <div class="font-semibold text-[#00d4aa]">Mohamad Asihf</div>
+            <div class="text-sm text-[#7a8a9a]">Registration No: 24MIS0005</div>
+            <div class="text-sm text-[#7a8a9a]">Course: Computer Networks</div>
+            <div class="text-sm text-[#7a8a9a]">VIT University</div>
+          </div>
+        </div>
+        <div class="mt-6 pt-6 border-t border-[rgba(0,212,170,0.1)] text-center text-xs text-[#4a5a6a]">
+          AI-Powered Network Monitoring Dashboard. Built for educational demonstration purposes.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ========== NETWORK CANVAS ANIMATION ==========
+    const canvas = document.getElementById('networkCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Initialize nodes array before any function uses it
+    let nodes = [];
+    let animationId = null;
+    let mouseX = 0;
+    let mouseY = 0;
+    
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initNodes();
+    }
+
+    function initNodes() {
+      nodes = [];
+      const nodeCount = Math.floor((canvas.width * canvas.height) / 25000);
+      const safeCount = Math.max(20, Math.min(nodeCount, 100));
+      
+      for (let i = 0; i < safeCount; i++) {
+        nodes.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          radius: Math.random() * 2 + 1,
+          opacity: Math.random() * 0.5 + 0.2
+        });
+      }
+    }
+
+    function drawNetwork() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw connections
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < 150) {
+            const opacity = Math.max(0, (1 - distance / 150) * 0.15);
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(0, 212, 170, ${opacity})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+      
+      // Draw nodes
+      for (const node of nodes) {
+        ctx.beginPath();
+        const safeRadius = Math.max(0.5, node.radius);
+        ctx.arc(node.x, node.y, safeRadius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 212, 170, ${node.opacity})`;
+        ctx.fill();
+        
+        // Glow effect
+        const gradient = ctx.createRadialGradient(
+          node.x, node.y, 0,
+          node.x, node.y, Math.max(1, safeRadius * 4)
+        );
+        gradient.addColorStop(0, `rgba(0, 212, 170, ${node.opacity * 0.3})`);
+        gradient.addColorStop(1, 'rgba(0, 212, 170, 0)');
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, Math.max(1, safeRadius * 4), 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      }
+      
+      // Mouse interaction
+      for (const node of nodes) {
+        const dx = mouseX - node.x;
+        const dy = mouseY - node.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < 200 && distance > 0) {
+          const force = (200 - distance) / 200;
+          node.vx += (dx / distance) * force * 0.02;
+          node.vy += (dy / distance) * force * 0.02;
+        }
+        
+        // Apply velocity
+        node.x += node.vx;
+        node.y += node.vy;
+        
+        // Damping
+        node.vx *= 0.99;
+        node.vy *= 0.99;
+        
+        // Boundary wrap
+        if (node.x < 0) node.x = canvas.width;
+        if (node.x > canvas.width) node.x = 0;
+        if (node.y < 0) node.y = canvas.height;
+        if (node.y > canvas.height) node.y = 0;
+      }
+      
+      animationId = requestAnimationFrame(drawNetwork);
+    }
+
+    // Initialize canvas after DOM is ready
+    resizeCanvas();
+    drawNetwork();
+
+    window.addEventListener('resize', resizeCanvas);
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    // ========== MOBILE MENU ==========
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    if (mobileMenuBtn && mobileMenu) {
+      mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+
+      // Close menu on link click
+      mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden');
+        });
+      });
+    }
+
+    // ========== SCROLL REVEAL ==========
+    const revealElements = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
+    // ========== COUNTER ANIMATION ==========
+    function animateCounters() {
+      const counters = document.querySelectorAll('.counter');
+      counters.forEach(counter => {
+        const target = parseFloat(counter.dataset.target);
+        const duration = 2000;
+        const start = performance.now();
+        
+        function update(currentTime) {
+          const elapsed = currentTime - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeOut = 1 - Math.pow(1 - progress, 3);
+          const current = target * easeOut;
+          
+          if (target % 1 !== 0) {
+            counter.textContent = current.toFixed(1);
+          } else {
+            counter.textContent = Math.floor(current);
+          }
+          
+          if (progress < 1) {
+            requestAnimationFrame(update);
+          }
+        }
+        
+        requestAnimationFrame(update);
+      });
+    }
+
+    // Trigger counters when home section is visible
+    const homeSection = document.getElementById('home');
+    const homeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          animateCounters();
+          homeObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.5 });
+
+    if (homeSection) {
+      homeObserver.observe(homeSection);
+    }
+
+    // ========== CHARTS ==========
+    // Chart.js default config
+    Chart.defaults.color = '#7a8a9a';
+    Chart.defaults.borderColor = 'rgba(0, 212, 170, 0.1)';
+    Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+
+    // Data arrays
+    const labels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
+    let bandwidthData = [45, 52, 68, 85, 72, 58, 65];
+    let delayData = [25, 30, 45, 65, 55, 35, 40];
+    let packetLossData = [0.5, 0.8, 1.5, 3.2, 2.1, 1.2, 1.8];
+    let trafficData = [35, 25, 20, 15, 5];
+
+    // Bandwidth Chart
+    const bandwidthCtx = document.getElementById('bandwidthChart');
+    let bandwidthChart = null;
+    if (bandwidthCtx) {
+      bandwidthChart = new Chart(bandwidthCtx.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Bandwidth %',
+            data: bandwidthData,
+            borderColor: '#00d4aa',
+            backgroundColor: 'rgba(0, 212, 170, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#00d4aa',
+            pointBorderColor: '#050a12',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0, 212, 170, 0.05)' } },
+            x: { grid: { display: false } }
+          },
+          interaction: { intersect: false, mode: 'index' }
+        }
+      });
+    }
+
+    // Delay Chart
+    const delayCtx = document.getElementById('delayChart');
+    let delayChart = null;
+    if (delayCtx) {
+      delayChart = new Chart(delayCtx.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Delay (ms)',
+            data: delayData,
+            borderColor: '#ffd93d',
+            backgroundColor: 'rgba(255, 217, 61, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#ffd93d',
+            pointBorderColor: '#050a12',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 217, 61, 0.05)' } },
+            x: { grid: { display: false } }
+          },
+          interaction: { intersect: false, mode: 'index' }
+        }
+      });
+    }
+
+    // Packet Loss Chart
+    const packetLossCtx = document.getElementById('packetLossChart');
+    let packetLossChart = null;
+    if (packetLossCtx) {
+      packetLossChart = new Chart(packetLossCtx.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Packet Loss %',
+            data: packetLossData,
+            backgroundColor: 'rgba(255, 56, 96, 0.6)',
+            borderColor: '#ff3860',
+            borderWidth: 1,
+            borderRadius: 4,
+            hoverBackgroundColor: '#ff3860'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 5, grid: { color: 'rgba(255, 56, 96, 0.05)' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // Traffic Distribution Chart
+    const trafficCtx = document.getElementById('trafficChart');
+    let trafficChart = null;
+    if (trafficCtx) {
+      trafficChart = new Chart(trafficCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Video Streaming', 'Web Browsing', 'File Transfer', 'Gaming', 'Other'],
+          datasets: [{
+            data: trafficData,
+            backgroundColor: [
+              '#00d4aa',
+              '#38bdf8',
+              '#a78bfa',
+              '#ffd93d',
+              '#ff6b35'
+            ],
+            borderColor: '#050a12',
+            borderWidth: 3,
+            hoverOffset: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                usePointStyle: true,
+                padding: 15,
+                font: { size: 11 }
+              }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+
+    // ========== INPUT RANGE BARS ==========
+    const bandwidthInput = document.getElementById('bandwidth');
+    const delayInput = document.getElementById('delay');
+    const packetLossInput = document.getElementById('packetLoss');
+    const bandwidthBar = document.getElementById('bandwidthBar');
+    const delayBar = document.getElementById('delayBar');
+    const packetBar = document.getElementById('packetBar');
+
+    function updateInputBars() {
+      if (bandwidthInput && bandwidthBar) {
+        const bwVal = Math.min(100, Math.max(0, parseFloat(bandwidthInput.value) || 0));
+        bandwidthBar.style.width = bwVal + '%';
+      }
+      if (delayInput && delayBar) {
+        const delayVal = Math.min(200, Math.max(0, parseFloat(delayInput.value) || 0));
+        delayBar.style.width = (delayVal / 200 * 100) + '%';
+      }
+      if (packetLossInput && packetBar) {
+        const lossVal = Math.min(10, Math.max(0, parseFloat(packetLossInput.value) || 0));
+        packetBar.style.width = (lossVal / 10 * 100) + '%';
+      }
+    }
+
+    if (bandwidthInput) bandwidthInput.addEventListener('input', updateInputBars);
+    if (delayInput) delayInput.addEventListener('input', updateInputBars);
+    if (packetLossInput) packetLossInput.addEventListener('input', updateInputBars);
+
+    // ========== PREDICTION LOGIC ==========
+    const predictionForm = document.getElementById('predictionForm');
+    const loadingState = document.getElementById('loadingState');
+    const resultState = document.getElementById('resultState');
+    const resultCard = document.getElementById('resultCard');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusLabel = document.getElementById('statusLabel');
+    const statusDesc = document.getElementById('statusDesc');
+    const resultBandwidth = document.getElementById('resultBandwidth');
+    const resultDelay = document.getElementById('resultDelay');
+    const resultLoss = document.getElementById('resultLoss');
+    const riskBar = document.getElementById('riskBar');
+
+    if (predictionForm) {
+      predictionForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const bandwidth = Math.min(100, Math.max(0, parseFloat(document.getElementById('bandwidth').value) || 0));
+        const delay = Math.min(200, Math.max(0, parseFloat(document.getElementById('delay').value) || 0));
+        const packetLoss = Math.min(10, Math.max(0, parseFloat(document.getElementById('packetLoss').value) || 0));
+        
+        // Show loading
+        if (loadingState) loadingState.classList.remove('hidden');
+        if (resultState) resultState.classList.add('hidden');
+        
+        // Simulate ML processing
+        setTimeout(() => {
+          if (loadingState) loadingState.classList.add('hidden');
+          if (resultState) resultState.classList.remove('hidden');
+          
+          // Update result values
+          if (resultBandwidth) resultBandwidth.textContent = bandwidth + '%';
+          if (resultDelay) resultDelay.textContent = delay + 'ms';
+          if (resultLoss) resultLoss.textContent = packetLoss + '%';
+          
+          // Prediction logic
+          const isCongestion = bandwidth > 80 || delay > 60 || packetLoss > 3;
+          
+          // Calculate risk percentage
+          let risk = 0;
+          risk += (bandwidth / 100) * 35;
+          risk += (delay / 200) * 35;
+          risk += (packetLoss / 10) * 30;
+          risk = Math.min(100, Math.max(0, risk));
+          
+          if (riskBar) riskBar.style.width = risk + '%';
+          
+          if (isCongestion) {
+            if (resultCard) {
+              resultCard.classList.remove('status-normal');
+              resultCard.classList.add('status-congestion');
+            }
+            if (statusIcon) {
+              statusIcon.innerHTML = `
+                <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-[#ff3860] to-[#ff6b35] flex items-center justify-center">
+                  <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>
+                </div>
+              `;
+            }
+            if (statusLabel) {
+              statusLabel.textContent = 'High Congestion Risk';
+              statusLabel.className = 'text-2xl font-bold text-[#ff3860]';
+            }
+            if (statusDesc) statusDesc.textContent = 'Immediate action recommended. Network parameters exceed safe thresholds.';
+          } else {
+            if (resultCard) {
+              resultCard.classList.remove('status-congestion');
+              resultCard.classList.add('status-normal');
+            }
+            if (statusIcon) {
+              statusIcon.innerHTML = `
+                <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
+                  <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+              `;
+            }
+            if (statusLabel) {
+              statusLabel.textContent = 'Network Operating Normally';
+              statusLabel.className = 'text-2xl font-bold text-[#00d4aa]';
+            }
+            if (statusDesc) statusDesc.textContent = 'All parameters within acceptable ranges. No congestion detected.';
+          }
+          
+          // Update charts with new data
+          if (bandwidthChart) {
+            bandwidthChart.data.datasets[0].data.shift();
+            bandwidthChart.data.datasets[0].data.push(bandwidth);
+            bandwidthChart.update('none');
+            const avg = bandwidthChart.data.datasets[0].data.reduce((a, b) => a + b, 0) / bandwidthChart.data.datasets[0].data.length;
+            const avgEl = document.getElementById('bandwidthAvg');
+            if (avgEl) avgEl.textContent = 'Avg: ' + avg.toFixed(1) + '%';
+          }
+          
+          if (delayChart) {
+            delayChart.data.datasets[0].data.shift();
+            delayChart.data.datasets[0].data.push(delay);
+            delayChart.update('none');
+            const avg = delayChart.data.datasets[0].data.reduce((a, b) => a + b, 0) / delayChart.data.datasets[0].data.length;
+            const avgEl = document.getElementById('delayAvg');
+            if (avgEl) avgEl.textContent = 'Avg: ' + avg.toFixed(1) + 'ms';
+          }
+          
+          if (packetLossChart) {
+            packetLossChart.data.datasets[0].data.shift();
+            packetLossChart.data.datasets[0].data.push(packetLoss);
+            packetLossChart.update('none');
+            const avg = packetLossChart.data.datasets[0].data.reduce((a, b) => a + b, 0) / packetLossChart.data.datasets[0].data.length;
+            const avgEl = document.getElementById('lossAvg');
+            if (avgEl) avgEl.textContent = 'Avg: ' + avg.toFixed(2) + '%';
+          }
+          
+          if (trafficChart) {
+            // Simulate traffic distribution change
+            const newTraffic = trafficData.map(v => Math.max(5, v + (Math.random() - 0.5) * 10));
+            const total = newTraffic.reduce((a, b) => a + b, 0);
+            trafficChart.data.datasets[0].data = newTraffic.map(v => Math.round(v / total * 100));
+            trafficChart.update('none');
+          }
+          
+        }, 1500);
+      });
+    }
+
+    // Initial calculation display
+    updateInputBars();
+
+    // ========== SMOOTH SCROLL FOR NAV LINKS ==========
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // ========== REDUCED MOTION CHECK ==========
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (prefersReducedMotion.matches && animationId) {
+      cancelAnimationFrame(animationId);
+    }
+  </script>
+</body>
+</html>
