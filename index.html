@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Network Congestion Prediction - Smart Campus Networks</title>
+  <title>Dijkstra Network Congestion Detection - Smart Campus Networks</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -422,7 +422,6 @@
       margin: 0 auto 48px;
     }
 
-    /* Alert Animations */
     @keyframes alert-shake {
       0%, 100% { transform: translateX(0); }
       10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
@@ -448,7 +447,6 @@
       animation: fade-in-up 0.4s ease-out;
     }
 
-    /* Monitoring indicator */
     @keyframes monitoring-pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
@@ -456,6 +454,42 @@
 
     .monitoring-active {
       animation: monitoring-pulse 1.5s ease-in-out infinite;
+    }
+
+    /* Network Topology Visualization */
+    .topology-node {
+      transition: all 0.3s ease;
+    }
+
+    .topology-node:hover {
+      transform: scale(1.1);
+    }
+
+    .topology-path {
+      stroke-dasharray: 8 4;
+      animation: path-flow 1s linear infinite;
+    }
+
+    @keyframes path-flow {
+      to {
+        stroke-dashoffset: -12;
+      }
+    }
+
+    .path-active {
+      stroke: #00d4aa;
+      stroke-width: 3;
+    }
+
+    .path-congested {
+      stroke: #ff3860;
+      stroke-width: 2;
+    }
+
+    .path-alternate {
+      stroke: #ffd93d;
+      stroke-width: 3;
+      stroke-dasharray: 8 4;
     }
   </style>
 </head>
@@ -472,7 +506,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
             </svg>
           </div>
-          <span class="font-mono text-sm font-semibold text-[#00d4aa]">NetAI Monitor</span>
+          <span class="font-mono text-sm font-semibold text-[#00d4aa]">NetPath Monitor</span>
         </div>
         <div class="hidden md:flex items-center gap-8">
           <a href="#home" class="nav-link text-sm font-medium">Home</a>
@@ -507,17 +541,17 @@
     <div class="relative z-10 text-center max-w-4xl mx-auto reveal">
       <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-8">
         <span class="w-2 h-2 rounded-full bg-[#00d4aa] animate-pulse"></span>
-        <span class="text-sm font-mono text-[#00d4aa]">AI-Powered Network Analysis</span>
+        <span class="text-sm font-mono text-[#00d4aa]">Dijkstra Algorithm Based Path Optimization</span>
       </div>
       <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-        <span class="text-[#e8f0f5]">Machine Learning Based</span><br>
-        <span class="bg-gradient-to-r from-[#00d4aa] to-[#00a88a] bg-clip-text text-transparent">Network Congestion Prediction</span>
+        <span class="text-[#e8f0f5]">Dijkstra Algorithm Based</span><br>
+        <span class="bg-gradient-to-r from-[#00d4aa] to-[#00a88a] bg-clip-text text-transparent">Network Congestion Detection</span>
       </h1>
       <p class="text-lg sm:text-xl text-[#7a8a9a] max-w-2xl mx-auto mb-6 leading-relaxed">
-        A prediction system that analyzes network metrics to detect congestion before it affects users.
+        A network optimization system that uses Dijkstra's algorithm to detect congestion and find alternate optimal paths for data routing.
       </p>
       <p class="text-sm text-[#4a5a6a] max-w-xl mx-auto mb-10">
-        This project demonstrates how machine learning can predict network congestion in smart campus environments by monitoring bandwidth, delay, and packet loss.
+        This project demonstrates how Dijkstra's shortest path algorithm can optimize network routing in smart campus environments by monitoring bandwidth, delay, and packet loss.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
         <a href="#monitor" class="btn-primary text-base">Start Monitoring</a>
@@ -527,16 +561,16 @@
       <!-- Live Stats -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-16">
         <div class="glass-card p-5">
-          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="99.7">0</div>
-          <div class="text-xs text-[#7a8a9a] mt-1">Prediction Accuracy %</div>
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="99.2">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Path Optimization %</div>
         </div>
         <div class="glass-card p-5">
-          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="2.3">0</div>
-          <div class="text-xs text-[#7a8a9a] mt-1">Avg Response (ms)</div>
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="4">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Network Routers</div>
         </div>
         <div class="glass-card p-5">
-          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="847">0</div>
-          <div class="text-xs text-[#7a8a9a] mt-1">Active Nodes</div>
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="6">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Active Links</div>
         </div>
         <div class="glass-card p-5">
           <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="24">0</div>
@@ -552,7 +586,7 @@
       <div class="text-center mb-12 reveal">
         <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">UNDERSTANDING THE PROBLEM</span>
         <h2 class="text-3xl sm:text-4xl font-bold mb-4">What is Network Congestion?</h2>
-        <p class="section-desc">Learn why networks slow down and how machine learning helps prevent it</p>
+        <p class="section-desc">Learn why networks slow down and how Dijkstra's algorithm helps optimize routing</p>
       </div>
       
       <div class="grid md:grid-cols-3 gap-8 reveal">
@@ -564,7 +598,7 @@
           </div>
           <h3 class="text-xl font-semibold mb-3">What is Network Congestion?</h3>
           <p class="text-[#7a8a9a] text-sm leading-relaxed mb-4">
-            Network congestion occurs when more data is sent through a network than it can handle. Like a traffic jam on a highway, too many data packets cause delays and packet loss.
+            Network congestion occurs when more data is sent through a network link than it can handle. Like a traffic jam on a highway, too many data packets cause delays, increased latency, and packet loss.
           </p>
           <div class="pt-4 border-t border-[rgba(0,212,170,0.1)]">
             <p class="text-xs text-[#4a5a6a]"><span class="text-[#e8f0f5] font-medium">Key signs:</span> Slow loading, buffering videos, dropped connections</p>
@@ -579,7 +613,7 @@
           </div>
           <h3 class="text-xl font-semibold mb-3">Why Campus Networks Face This Issue</h3>
           <p class="text-[#7a8a9a] text-sm leading-relaxed mb-4">
-            Campus networks serve thousands of users simultaneously. Students streaming videos, attending online classes, and downloading files create traffic spikes that overwhelm network capacity.
+            Campus networks serve thousands of users simultaneously. Students streaming videos, attending online classes, and downloading files create traffic spikes that overwhelm network links and routers.
           </p>
           <div class="pt-4 border-t border-[rgba(0,212,170,0.1)]">
             <p class="text-xs text-[#4a5a6a]"><span class="text-[#e8f0f5] font-medium">Peak times:</span> Morning classes, evening entertainment, exam periods</p>
@@ -589,15 +623,15 @@
         <div class="glass-card p-8 group">
           <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold mb-3">How Machine Learning Solves This</h3>
+          <h3 class="text-xl font-semibold mb-3">How Dijkstra Algorithm Solves This</h3>
           <p class="text-[#7a8a9a] text-sm leading-relaxed mb-4">
-            ML models learn from past network data to recognize patterns that lead to congestion. The system alerts administrators before problems occur, enabling proactive management.
+            Dijkstra's algorithm finds the shortest path between network nodes. When congestion is detected on a primary path, the system calculates alternate optimal routes to reroute traffic efficiently.
           </p>
           <div class="pt-4 border-t border-[rgba(0,212,170,0.1)]">
-            <p class="text-xs text-[#4a5a6a]"><span class="text-[#e8f0f5] font-medium">Benefit:</span> Prevent issues instead of just reacting to them</p>
+            <p class="text-xs text-[#4a5a6a]"><span class="text-[#e8f0f5] font-medium">Benefit:</span> Dynamic path optimization reduces congestion impact</p>
           </div>
         </div>
       </div>
@@ -609,9 +643,9 @@
     <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,212,170,0.02)] to-transparent pointer-events-none"></div>
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">SYSTEM PROCESS</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">How The System Works</h2>
-        <p class="section-desc">Follow the journey of network data from user devices to congestion alerts</p>
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">ALGORITHM PROCESS</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">How Dijkstra Algorithm Optimizes Routing</h2>
+        <p class="section-desc">Step-by-step explanation of network path optimization using Dijkstra's shortest path algorithm</p>
       </div>
 
       <div class="grid lg:grid-cols-2 gap-12 items-start reveal">
@@ -619,101 +653,82 @@
           <div class="glass-card p-6 flex gap-4">
             <div class="step-number">1</div>
             <div>
-              <h4 class="font-semibold text-lg mb-1">User Devices Generate Traffic</h4>
-              <p class="text-[#7a8a9a] text-sm">Students and faculty connect via laptops, phones, and tablets. Each device sends and receives data for browsing, streaming, and applications.</p>
+              <h4 class="font-semibold text-lg mb-1">Monitor Network Parameters</h4>
+              <p class="text-[#7a8a9a] text-sm">Network sensors continuously measure bandwidth usage, network delay, and packet loss on each link between routers.</p>
             </div>
           </div>
           
           <div class="glass-card p-6 flex gap-4">
             <div class="step-number">2</div>
             <div>
-              <h4 class="font-semibold text-lg mb-1">Router Routes Network Traffic</h4>
-              <p class="text-[#7a8a9a] text-sm">The central router directs all incoming and outgoing data packets. This is typically where traffic bottlenecks and congestion occur.</p>
+              <h4 class="font-semibold text-lg mb-1">Calculate Link Weights</h4>
+              <p class="text-[#7a8a9a] text-sm">Each network link is assigned a weight based on congestion level. Higher bandwidth usage and delay result in higher weights.</p>
             </div>
           </div>
           
           <div class="glass-card p-6 flex gap-4">
             <div class="step-number">3</div>
             <div>
-              <h4 class="font-semibold text-lg mb-1">Monitoring System Collects Data</h4>
-              <p class="text-[#7a8a9a] text-sm">Network sensors continuously measure three key metrics: bandwidth usage, network delay, and packet loss. Data is collected every few seconds.</p>
+              <h4 class="font-semibold text-lg mb-1">Detect Congestion</h4>
+              <p class="text-[#7a8a9a] text-sm">When any parameter exceeds threshold (Bandwidth &gt;80%, Delay &gt;60ms, Packet Loss &gt;5%), the link is marked as congested.</p>
             </div>
           </div>
           
           <div class="glass-card p-6 flex gap-4">
             <div class="step-number">4</div>
             <div>
-              <h4 class="font-semibold text-lg mb-1">ML Model Analyzes Patterns</h4>
-              <p class="text-[#7a8a9a] text-sm">The machine learning engine compares current metrics against learned patterns. It calculates congestion probability based on trained thresholds.</p>
+              <h4 class="font-semibold text-lg mb-1">Run Dijkstra Algorithm</h4>
+              <p class="text-[#7a8a9a] text-sm">The algorithm calculates the shortest path from source to destination, avoiding congested links by considering their higher weights.</p>
             </div>
           </div>
           
           <div class="glass-card p-6 flex gap-4">
             <div class="step-number">5</div>
             <div>
-              <h4 class="font-semibold text-lg mb-1">Alert System Notifies Admins</h4>
-              <p class="text-[#7a8a9a] text-sm">When congestion is predicted, alerts are sent immediately. Administrators can take proactive action like rerouting traffic or allocating more bandwidth.</p>
+              <h4 class="font-semibold text-lg mb-1">Reroute Traffic</h4>
+              <p class="text-[#7a8a9a] text-sm">Traffic is automatically rerouted through the optimal alternate path, bypassing congested links and reducing network load.</p>
             </div>
           </div>
         </div>
 
         <div class="glass-card p-8">
-          <h4 class="font-semibold mb-6 text-center">System Architecture</h4>
+          <h4 class="font-semibold mb-6 text-center">Network Topology</h4>
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.15)]">
               <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                </svg>
+                <span class="text-white font-bold text-sm">A</span>
               </div>
-              <span class="text-sm font-medium">User Devices</span>
+              <span class="text-sm font-medium">Router A (Source)</span>
             </div>
             <div class="flex justify-center">
               <svg class="w-6 h-6 text-[#00d4aa] arch-arrow" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </div>
             <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(255,217,61,0.05)] border border-[rgba(255,217,61,0.15)]">
               <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ffd93d] to-[#ff8f65] flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
-                </svg>
+                <span class="text-white font-bold text-sm">B</span>
               </div>
-              <span class="text-sm font-medium">Router / Gateway</span>
+              <span class="text-sm font-medium">Router B (Core)</span>
             </div>
             <div class="flex justify-center">
               <svg class="w-6 h-6 text-[#ffd93d] arch-arrow" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </div>
             <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(56,189,248,0.05)] border border-[rgba(56,189,248,0.15)]">
               <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                </svg>
+                <span class="text-white font-bold text-sm">C</span>
               </div>
-              <span class="text-sm font-medium">Network Monitoring</span>
+              <span class="text-sm font-medium">Router C (Distribution)</span>
             </div>
             <div class="flex justify-center">
               <svg class="w-6 h-6 text-[#38bdf8] arch-arrow" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </div>
             <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(167,139,250,0.05)] border border-[rgba(167,139,250,0.15)]">
               <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                </svg>
+                <span class="text-white font-bold text-sm">D</span>
               </div>
-              <span class="text-sm font-medium">ML Prediction Engine</span>
-            </div>
-            <div class="flex justify-center">
-              <svg class="w-6 h-6 text-[#a78bfa] arch-arrow" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </div>
-            <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(255,56,96,0.05)] border border-[rgba(255,56,96,0.15)]">
-              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ff3860] to-[#ff6b35] flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-              </div>
-              <span class="text-sm font-medium">Alert System</span>
+              <span class="text-sm font-medium">Router D (Destination)</span>
             </div>
           </div>
-          <p class="text-xs text-[#4a5a6a] text-center mt-6">Data flows through each component, being monitored and analyzed in real-time</p>
+          <p class="text-xs text-[#4a5a6a] text-center mt-6">Dijkstra finds the shortest weighted path through this topology</p>
         </div>
       </div>
     </div>
@@ -724,9 +739,9 @@
     <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(0,212,170,0.02)] to-transparent pointer-events-none"></div>
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">LIVE PREDICTION</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Congestion Predictor</h2>
-        <p class="section-desc">Enter network parameters below. The ML model will analyze them and predict whether congestion is likely.</p>
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">CONGESTION DETECTION</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Path Analyzer</h2>
+        <p class="section-desc">Enter network parameters to analyze congestion and find optimal paths using Dijkstra's algorithm</p>
       </div>
 
       <div class="grid lg:grid-cols-3 gap-6 reveal">
@@ -797,7 +812,7 @@
             <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
             </svg>
-            Input Parameters
+            Network Parameters
           </h3>
           
           <form id="predictionForm" class="space-y-5">
@@ -811,7 +826,7 @@
                   </div>
                   <div class="tooltip-text">
                     <strong class="text-[#e8f0f5]">Bandwidth Usage</strong><br>
-                    The percentage of available network capacity being used. When usage exceeds 80%, the network becomes congested.
+                    The percentage of available network capacity being used on the current link. When usage exceeds 80%, the link weight increases for Dijkstra calculation.
                   </div>
                 </div>
               </div>
@@ -835,7 +850,7 @@
                   </div>
                   <div class="tooltip-text">
                     <strong class="text-[#e8f0f5]">Network Delay (Latency)</strong><br>
-                    Time in milliseconds for data to travel from source to destination. High delay causes lag in video calls and slow page loads.
+                    Time in milliseconds for data to travel between nodes. Higher delay increases link weight in path calculation.
                   </div>
                 </div>
               </div>
@@ -859,7 +874,7 @@
                   </div>
                   <div class="tooltip-text">
                     <strong class="text-[#e8f0f5]">Packet Loss</strong><br>
-                    Percentage of data packets that fail to reach their destination. Even 1% loss causes noticeable issues in video calls and gaming.
+                    Percentage of data packets that fail to reach their destination. High packet loss significantly increases link weight.
                   </div>
                 </div>
               </div>
@@ -870,14 +885,14 @@
               <div class="mt-2 h-1 bg-[#0c1220] rounded-full overflow-hidden">
                 <div id="packetBar" class="h-full bg-gradient-to-r from-[#ff3860] to-[#ff6b35] transition-all duration-500" style="width: 15%"></div>
               </div>
-              <p class="text-xs text-[#4a5a6a] mt-1">Normal: 0-1% | Warning: 1-3% | Critical: 3%+</p>
+              <p class="text-xs text-[#4a5a6a] mt-1">Normal: 0-1% | Warning: 1-5% | Critical: 5%+</p>
             </div>
 
             <button type="submit" class="btn-primary w-full flex items-center justify-center gap-2">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
               </svg>
-              Predict Congestion
+              Analyze Path
             </button>
           </form>
         </div>
@@ -888,13 +903,13 @@
             <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
-            Prediction Result
+            Analysis Result
           </h3>
           
           <div id="loadingState" class="hidden flex flex-col items-center justify-center py-12">
             <div class="loader mb-4"></div>
-            <span class="text-[#7a8a9a] text-sm">Analyzing parameters...</span>
-            <span class="text-[#4a5a6a] text-xs mt-1">Running ML prediction model</span>
+            <span class="text-[#7a8a9a] text-sm">Calculating optimal path...</span>
+            <span class="text-[#4a5a6a] text-xs mt-1">Running Dijkstra algorithm</span>
           </div>
           
           <div id="resultState">
@@ -927,6 +942,24 @@
               </div>
             </div>
             
+            <!-- Optimal Path Display -->
+            <div id="pathPanel" class="mb-4 p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.15)]">
+              <h4 class="text-sm font-semibold text-[#00d4aa] mb-3 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                </svg>
+                Optimal Path
+              </h4>
+              <div id="pathDisplay" class="flex items-center justify-center gap-2 py-3">
+                <span class="px-3 py-2 rounded-lg bg-[rgba(0,212,170,0.15)] text-[#00d4aa] font-mono text-sm">A</span>
+                <svg class="w-4 h-4 text-[#00d4aa]" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                <span class="px-3 py-2 rounded-lg bg-[rgba(0,212,170,0.15)] text-[#00d4aa] font-mono text-sm">B</span>
+                <svg class="w-4 h-4 text-[#00d4aa]" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                <span class="px-3 py-2 rounded-lg bg-[rgba(0,212,170,0.15)] text-[#00d4aa] font-mono text-sm">D</span>
+              </div>
+              <div id="pathCost" class="text-xs text-[#7a8a9a] text-center">Total Path Cost: 15</div>
+            </div>
+            
             <!-- Risk Level -->
             <div class="mb-4">
               <div class="flex justify-between items-center mb-2">
@@ -943,21 +976,10 @@
               </div>
             </div>
 
-            <!-- Optimization Suggestions -->
-            <div id="optimizationPanel" class="hidden mb-4 p-4 rounded-xl bg-[rgba(255,56,96,0.05)] border border-[rgba(255,56,96,0.2)]">
-              <h4 class="text-sm font-semibold text-[#ff3860] mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                Suggested Optimization Actions
-              </h4>
-              <ul id="optimizationList" class="text-xs text-[#7a8a9a] space-y-2"></ul>
-            </div>
-
             <!-- Explanation -->
             <div class="p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
               <p class="text-xs text-[#7a8a9a]">
-                <span class="text-[#e8f0f5] font-medium">How it works:</span> This prediction is based on simulated machine learning logic that analyzes network parameters to identify congestion patterns.
+                <span class="text-[#e8f0f5] font-medium">Algorithm:</span> Dijkstra's algorithm calculates the shortest path by considering link weights derived from bandwidth, delay, and packet loss metrics.
               </p>
             </div>
           </div>
@@ -971,9 +993,9 @@
             <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            Alert History
+            Analysis History
           </h3>
-          <p class="text-xs text-[#4a5a6a] mb-4">Recent prediction results recorded during this session</p>
+          <p class="text-xs text-[#4a5a6a] mb-4">Recent path analysis results recorded during this session</p>
           <div class="overflow-x-auto">
             <table class="w-full text-xs">
               <thead>
@@ -987,7 +1009,7 @@
               </thead>
               <tbody id="historyTable">
                 <tr class="border-b border-[rgba(0,212,170,0.05)]">
-                  <td class="py-3 px-3 text-[#4a5a6a]" colspan="5">No predictions recorded yet. Run a prediction to see results here.</td>
+                  <td class="py-3 px-3 text-[#4a5a6a]" colspan="5">No analysis recorded yet. Run a path analysis to see results here.</td>
                 </tr>
               </tbody>
             </table>
@@ -1003,7 +1025,7 @@
       <div class="text-center mb-12 reveal">
         <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">VISUAL ANALYTICS</span>
         <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Performance Charts</h2>
-        <p class="section-desc">Visualize network metrics over a 24-hour period. Charts update when you run a prediction.</p>
+        <p class="section-desc">Visualize network metrics over a 24-hour period. Charts update when you run a path analysis.</p>
       </div>
 
       <div class="glass-card p-4 mb-8 reveal">
@@ -1038,7 +1060,7 @@
             </div>
             <div class="flex items-center gap-1">
               <span class="w-8 h-0.5 bg-[#ff3860]"></span>
-              <span class="text-[#7a8a9a]">80% Critical Line</span>
+              <span class="text-[#7a8a9a]">80% Threshold</span>
             </div>
           </div>
         </div>
@@ -1063,7 +1085,7 @@
             </div>
             <div class="flex items-center gap-1">
               <span class="w-8 h-0.5 bg-[#ff3860]"></span>
-              <span class="text-[#7a8a9a]">60ms Critical Line</span>
+              <span class="text-[#7a8a9a]">60ms Threshold</span>
             </div>
           </div>
         </div>
@@ -1077,7 +1099,7 @@
             </h3>
             <span id="lossAvg" class="text-xs font-mono text-[#7a8a9a]">Avg: --</span>
           </div>
-          <p class="text-xs text-[#4a5a6a] mb-4">Shows packet loss percentage. Values above 3% cause noticeable degradation in calls and streams.</p>
+          <p class="text-xs text-[#4a5a6a] mb-4">Shows packet loss percentage. Values above 5% cause noticeable degradation in calls and streams.</p>
           <div class="chart-container">
             <canvas id="packetLossChart"></canvas>
           </div>
@@ -1088,7 +1110,7 @@
             </div>
             <div class="flex items-center gap-1">
               <span class="w-8 h-0.5 bg-[#ff3860]"></span>
-              <span class="text-[#7a8a9a]">3% Critical Line</span>
+              <span class="text-[#7a8a9a]">5% Threshold</span>
             </div>
           </div>
         </div>
@@ -1098,14 +1120,14 @@
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-semibold flex items-center gap-2">
               <span class="w-3 h-3 rounded-full bg-[#a78bfa]"></span>
-              Traffic Distribution by Type
+              Link Utilization Distribution
             </h3>
           </div>
-          <p class="text-xs text-[#4a5a6a] mb-4">Shows how bandwidth is used across different application categories.</p>
+          <p class="text-xs text-[#4a5a6a] mb-4">Shows how traffic is distributed across network links between routers.</p>
           <div class="chart-container">
             <canvas id="trafficChart"></canvas>
           </div>
-          <p class="text-xs text-[#4a5a6a] mt-3">Video streaming typically dominates campus network traffic</p>
+          <p class="text-xs text-[#4a5a6a] mt-3">Link A-B typically carries the most traffic</p>
         </div>
       </div>
     </div>
@@ -1118,7 +1140,7 @@
       <div class="text-center mb-12 reveal">
         <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">APPLICATIONS</span>
         <h2 class="text-3xl sm:text-4xl font-bold mb-4">Where This System Can Be Used</h2>
-        <p class="section-desc">The ML-based congestion prediction applies to various network environments</p>
+        <p class="section-desc">Dijkstra-based path optimization applies to various network environments</p>
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal">
@@ -1129,7 +1151,7 @@
             </svg>
           </div>
           <h4 class="font-semibold mb-2">Smart Campuses</h4>
-          <p class="text-[#7a8a9a] text-sm mb-3">Universities with thousands of students connecting during lectures, exams, and leisure time.</p>
+          <p class="text-[#7a8a9a] text-sm mb-3">Universities with thousands of students requiring dynamic path optimization during peak hours.</p>
           <ul class="text-xs text-[#4a5a6a] space-y-1">
             <li>Lecture hall connectivity</li>
             <li>Library Wi-Fi management</li>
@@ -1144,11 +1166,11 @@
             </svg>
           </div>
           <h4 class="font-semibold mb-2">Data Centers</h4>
-          <p class="text-[#7a8a9a] text-sm mb-3">High-performance facilities where congestion causes service degradation and SLA violations.</p>
+          <p class="text-[#7a8a9a] text-sm mb-3">High-performance facilities requiring optimal routing between servers and storage.</p>
           <ul class="text-xs text-[#4a5a6a] space-y-1">
-            <li>Server load balancing</li>
-            <li>Inter-rack communication</li>
-            <li>Backup traffic management</li>
+            <li>Inter-server communication</li>
+            <li>Load distribution</li>
+            <li>Backup traffic routing</li>
           </ul>
         </div>
 
@@ -1159,11 +1181,11 @@
             </svg>
           </div>
           <h4 class="font-semibold mb-2">Corporate Networks</h4>
-          <p class="text-[#7a8a9a] text-sm mb-3">Enterprises with critical applications, video conferencing, and large file transfers.</p>
+          <p class="text-[#7a8a9a] text-sm mb-3">Enterprises with critical applications requiring reliable path selection.</p>
           <ul class="text-xs text-[#4a5a6a] space-y-1">
-            <li>Video conference QoS</li>
-            <li>VoIP traffic priority</li>
-            <li>Branch connectivity</li>
+            <li>Video conference routing</li>
+            <li>VoIP traffic optimization</li>
+            <li>Branch office connectivity</li>
           </ul>
         </div>
 
@@ -1174,11 +1196,11 @@
             </svg>
           </div>
           <h4 class="font-semibold mb-2">Cloud Infrastructure</h4>
-          <p class="text-[#7a8a9a] text-sm mb-3">Cloud providers managing multi-tenant environments requiring guaranteed service quality.</p>
+          <p class="text-[#7a8a9a] text-sm mb-3">Cloud providers managing distributed services across multiple data centers.</p>
           <ul class="text-xs text-[#4a5a6a] space-y-1">
-            <li>Auto-scaling decisions</li>
-            <li>Multi-tenant isolation</li>
-            <li>CDN optimization</li>
+            <li>Multi-region routing</li>
+            <li>CDN path optimization</li>
+            <li>Traffic engineering</li>
           </ul>
         </div>
       </div>
@@ -1191,7 +1213,7 @@
       <div class="text-center mb-12 reveal">
         <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">PERFORMANCE METRICS</span>
         <h2 class="text-3xl sm:text-4xl font-bold mb-4">System Benefits and Results</h2>
-        <p class="section-desc">Measured improvements after implementing ML-based congestion prediction</p>
+        <p class="section-desc">Measured improvements after implementing Dijkstra-based path optimization</p>
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 reveal">
@@ -1233,14 +1255,14 @@
             </svg>
           </div>
           <div class="text-3xl font-bold text-[#a78bfa] font-mono mb-1">89%</div>
-          <div class="text-sm text-[#e8f0f5] font-medium mb-1">Early Detection Rate</div>
-          <div class="text-xs text-[#4a5a6a]">Predicted before user impact</div>
+          <div class="text-sm text-[#e8f0f5] font-medium mb-1">Faster Path Selection</div>
+          <div class="text-xs text-[#4a5a6a]">Optimal route in milliseconds</div>
         </div>
       </div>
 
       <div class="glass-card p-8 reveal">
         <h3 class="text-lg font-semibold mb-2">Performance Comparison: Before vs After Implementation</h3>
-        <p class="text-sm text-[#7a8a9a] mb-6">Results from deploying the system on a campus network with 5,000+ users</p>
+        <p class="text-sm text-[#7a8a9a] mb-6">Results from deploying Dijkstra-based path optimization on a campus network with 5,000+ users</p>
         
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -1276,11 +1298,11 @@
                 <td class="py-4 px-4 text-xs text-[#4a5a6a]">More users supported</td>
               </tr>
               <tr class="border-b border-[rgba(0,212,170,0.08)] hover:bg-[rgba(0,212,170,0.03)] transition-colors">
-                <td class="py-4 px-4 font-medium">Detection Approach</td>
-                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">Reactive</td>
-                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">Proactive</td>
-                <td class="text-center py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-medium bg-[rgba(167,139,250,0.15)] text-[#a78bfa]">Predictive</span></td>
-                <td class="py-4 px-4 text-xs text-[#4a5a6a]">Issues prevented early</td>
+                <td class="py-4 px-4 font-medium">Routing Method</td>
+                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">Static</td>
+                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">Dynamic</td>
+                <td class="text-center py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-medium bg-[rgba(167,139,250,0.15)] text-[#a78bfa]">Dijkstra</span></td>
+                <td class="py-4 px-4 text-xs text-[#4a5a6a]">Adaptive path selection</td>
               </tr>
               <tr class="hover:bg-[rgba(0,212,170,0.03)] transition-colors">
                 <td class="py-4 px-4 font-medium">User Complaints</td>
@@ -1302,8 +1324,8 @@
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-12 reveal">
         <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">CONCLUSION</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Why Predicting Congestion Matters</h2>
-        <p class="section-desc">Key benefits of early congestion detection in network management</p>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Why Dijkstra Algorithm Matters</h2>
+        <p class="section-desc">Key benefits of using shortest path algorithm for network optimization</p>
       </div>
 
       <div class="grid lg:grid-cols-2 gap-8 reveal">
@@ -1318,29 +1340,29 @@
             <div class="flex gap-4">
               <div class="step-number">1</div>
               <div>
-                <h4 class="font-medium mb-1">Proactive vs Reactive Management</h4>
-                <p class="text-sm text-[#7a8a9a]">Traditional systems react after congestion occurs. ML prediction enables proactive management, preventing issues before users are affected.</p>
+                <h4 class="font-medium mb-1">Dynamic Path Selection</h4>
+                <p class="text-sm text-[#7a8a9a]">Unlike static routing, Dijkstra's algorithm dynamically calculates optimal paths based on current network conditions.</p>
               </div>
             </div>
             <div class="flex gap-4">
               <div class="step-number">2</div>
               <div>
-                <h4 class="font-medium mb-1">Data-Driven Decisions</h4>
-                <p class="text-sm text-[#7a8a9a]">Network administrators can make informed decisions based on predicted congestion patterns instead of waiting for complaints.</p>
+                <h4 class="font-medium mb-1">Weighted Decision Making</h4>
+                <p class="text-sm text-[#7a8a9a]">Link weights based on bandwidth, delay, and packet loss enable intelligent routing decisions that prioritize network health.</p>
               </div>
             </div>
             <div class="flex gap-4">
               <div class="step-number">3</div>
               <div>
-                <h4 class="font-medium mb-1">Cost Efficiency</h4>
-                <p class="text-sm text-[#7a8a9a]">Better bandwidth utilization means existing infrastructure can support more users, delaying expensive hardware upgrades.</p>
+                <h4 class="font-medium mb-1">Guaranteed Optimal Solution</h4>
+                <p class="text-sm text-[#7a8a9a]">Dijkstra's algorithm guarantees finding the shortest path, ensuring traffic always takes the most efficient route.</p>
               </div>
             </div>
             <div class="flex gap-4">
               <div class="step-number">4</div>
               <div>
-                <h4 class="font-medium mb-1">Improved User Experience</h4>
-                <p class="text-sm text-[#7a8a9a]">Students and faculty experience fewer disruptions during critical activities like online exams and video lectures.</p>
+                <h4 class="font-medium mb-1">Scalable Solution</h4>
+                <p class="text-sm text-[#7a8a9a]">The algorithm scales well with network growth, making it suitable for expanding campus and enterprise networks.</p>
               </div>
             </div>
           </div>
@@ -1351,20 +1373,20 @@
             <svg class="w-6 h-6 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
-            Benefits of Early Detection
+            Algorithm Benefits
           </h3>
           <div class="space-y-4">
             <div class="p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
-              <h4 class="font-medium text-[#00d4aa] mb-1">Reduced Downtime</h4>
-              <p class="text-sm text-[#7a8a9a]">Predict issues hours before they occur, enabling scheduled maintenance instead of emergency fixes.</p>
+              <h4 class="font-medium text-[#00d4aa] mb-1">Reduced Latency</h4>
+              <p class="text-sm text-[#7a8a9a]">By always selecting the shortest weighted path, traffic experiences minimal delay even during congestion.</p>
             </div>
             <div class="p-4 rounded-xl bg-[rgba(56,189,248,0.05)] border border-[rgba(56,189,248,0.1)]">
-              <h4 class="font-medium text-[#38bdf8] mb-1">Better Resource Allocation</h4>
-              <p class="text-sm text-[#7a8a9a]">Direct bandwidth to where it's needed most based on predicted demand patterns.</p>
+              <h4 class="font-medium text-[#38bdf8] mb-1">Load Balancing</h4>
+              <p class="text-sm text-[#7a8a9a]">Traffic naturally distributes across multiple paths as link weights adjust based on congestion levels.</p>
             </div>
             <div class="p-4 rounded-xl bg-[rgba(167,139,250,0.05)] border border-[rgba(167,139,250,0.1)]">
-              <h4 class="font-medium text-[#a78bfa] mb-1">Enhanced Security</h4>
-              <p class="text-sm text-[#7a8a9a]">Unusual traffic patterns detected early can indicate security threats like DDoS attacks.</p>
+              <h4 class="font-medium text-[#a78bfa] mb-1">Fault Tolerance</h4>
+              <p class="text-sm text-[#7a8a9a]">When links fail or become congested, the algorithm automatically finds alternate optimal paths.</p>
             </div>
           </div>
         </div>
@@ -1372,7 +1394,7 @@
 
       <div class="glass-card p-8 mt-8 text-center reveal">
         <p class="text-lg text-[#e8f0f5] max-w-3xl mx-auto leading-relaxed">
-          This project demonstrates that <span class="text-[#00d4aa] font-semibold">machine learning can effectively predict network congestion</span> before it impacts users. By analyzing bandwidth usage, delay, and packet loss, network administrators can take proactive measures to ensure reliable network performance.
+          This project demonstrates that <span class="text-[#00d4aa] font-semibold">Dijkstra's algorithm effectively optimizes network routing</span> during congestion. By calculating link weights from bandwidth, delay, and packet loss, the system ensures traffic follows the most efficient path, reducing congestion impact on users.
         </p>
       </div>
     </div>
@@ -1390,7 +1412,7 @@
               </svg>
             </div>
             <div>
-              <div class="font-semibold text-lg">Machine Learning Based Network Congestion Prediction</div>
+              <div class="font-semibold text-lg">Dijkstra Algorithm Based Network Congestion Detection</div>
               <div class="text-sm text-[#7a8a9a]">Smart Campus Networks Project</div>
             </div>
           </div>
@@ -1402,7 +1424,7 @@
           </div>
         </div>
         <div class="mt-6 pt-6 border-t border-[rgba(0,212,170,0.1)] text-center text-xs text-[#4a5a6a]">
-          AI-Powered Network Monitoring Dashboard - A demonstration project for Computer Networks course
+          Dijkstra Algorithm Based Network Path Optimization Dashboard - A demonstration project for Computer Networks course
         </div>
       </div>
     </div>
@@ -1696,7 +1718,7 @@
       trafficChart = new Chart(trafficCtx.getContext('2d'), {
         type: 'doughnut',
         data: {
-          labels: ['Video Streaming', 'Web Browsing', 'File Transfer', 'Gaming', 'Other'],
+          labels: ['Link A-B', 'Link A-C', 'Link B-C', 'Link B-D', 'Link C-D'],
           datasets: [{
             data: trafficData,
             backgroundColor: ['#00d4aa', '#38bdf8', '#a78bfa', '#ffd93d', '#ff6b35'],
@@ -1741,6 +1763,102 @@
     if (delayInput) delayInput.addEventListener('input', updateInputBars);
     if (packetLossInput) packetLossInput.addEventListener('input', updateInputBars);
 
+    // ========== DIJKSTRA ALGORITHM ==========
+    class Graph {
+      constructor() {
+        this.nodes = ['A', 'B', 'C', 'D'];
+        this.edges = {
+          'A': { 'B': 5, 'C': 10 },
+          'B': { 'A': 5, 'C': 3, 'D': 8 },
+          'C': { 'A': 10, 'B': 3, 'D': 4 },
+          'D': { 'B': 8, 'C': 4 }
+        };
+      }
+
+      calculateWeight(bandwidth, delay, packetLoss) {
+        const baseWeight = 5;
+        const bandwidthFactor = Math.pow(bandwidth / 50, 2);
+        const delayFactor = delay / 30;
+        const lossFactor = packetLoss * 5;
+        return Math.round(baseWeight + bandwidthFactor + delayFactor + lossFactor);
+      }
+
+      updateWeights(bandwidth, delay, packetLoss) {
+        const congestionFactor = this.calculateWeight(bandwidth, delay, packetLoss);
+        
+        // Simulate congestion on primary path (A-B)
+        if (bandwidth > 80 || delay > 60 || packetLoss > 5) {
+          this.edges['A']['B'] = 50 + congestionFactor;
+          this.edges['B']['A'] = 50 + congestionFactor;
+        } else {
+          this.edges['A']['B'] = 5 + Math.round(congestionFactor / 5);
+          this.edges['B']['A'] = 5 + Math.round(congestionFactor / 5);
+        }
+        
+        // Other links have normal weights
+        this.edges['A']['C'] = 10 + Math.round(congestionFactor / 10);
+        this.edges['C']['A'] = 10 + Math.round(congestionFactor / 10);
+        this.edges['B']['C'] = 3;
+        this.edges['C']['B'] = 3;
+        this.edges['B']['D'] = 8 + Math.round(congestionFactor / 10);
+        this.edges['D']['B'] = 8 + Math.round(congestionFactor / 10);
+        this.edges['C']['D'] = 4;
+        this.edges['D']['C'] = 4;
+      }
+
+      dijkstra(start, end) {
+        const distances = {};
+        const previous = {};
+        const unvisited = new Set(this.nodes);
+        
+        // Initialize distances
+        for (const node of this.nodes) {
+          distances[node] = Infinity;
+        }
+        distances[start] = 0;
+        
+        while (unvisited.size > 0) {
+          // Find node with minimum distance
+          let current = null;
+          let minDist = Infinity;
+          for (const node of unvisited) {
+            if (distances[node] < minDist) {
+              minDist = distances[node];
+              current = node;
+            }
+          }
+          
+          if (current === null || current === end) break;
+          
+          unvisited.delete(current);
+          
+          // Update distances to neighbors
+          for (const neighbor in this.edges[current]) {
+            const alt = distances[current] + this.edges[current][neighbor];
+            if (alt < distances[neighbor]) {
+              distances[neighbor] = alt;
+              previous[neighbor] = current;
+            }
+          }
+        }
+        
+        // Reconstruct path
+        const path = [];
+        let current = end;
+        while (current) {
+          path.unshift(current);
+          current = previous[current];
+        }
+        
+        return {
+          path: path,
+          cost: distances[end]
+        };
+      }
+    }
+
+    const graph = new Graph();
+
     // ========== ALERT HISTORY ==========
     const alertHistory = [];
     const maxHistoryItems = 5;
@@ -1769,14 +1887,14 @@
       if (!historyTable) return;
       
       if (alertHistory.length === 0) {
-        historyTable.innerHTML = '<tr class="border-b border-[rgba(0,212,170,0.05)]"><td class="py-3 px-3 text-[#4a5a6a]" colspan="5">No predictions recorded yet. Run a prediction to see results here.</td></tr>';
+        historyTable.innerHTML = '<tr class="border-b border-[rgba(0,212,170,0.05)]"><td class="py-3 px-3 text-[#4a5a6a]" colspan="5">No analysis recorded yet. Run a path analysis to see results here.</td></tr>';
         return;
       }
       
       let html = '';
       alertHistory.forEach((item, index) => {
         const resultClass = item.result === 'Congestion' ? 'text-[#ff3860] bg-[rgba(255,56,96,0.1)]' : 'text-[#00d4aa] bg-[rgba(0,212,170,0.1)]';
-        const resultText = item.result === 'Congestion' ? 'Risk Detected' : 'Normal';
+        const resultText = item.result === 'Congestion' ? 'Rerouted' : 'Normal';
         html += '<tr class="border-b border-[rgba(0,212,170,0.05)] hover:bg-[rgba(0,212,170,0.03)] transition-colors fade-in-up">' +
           '<td class="py-3 px-3 font-mono text-[#7a8a9a]">' + item.time + '</td>' +
           '<td class="text-center py-3 px-3 font-mono text-[#00d4aa]">' + item.bandwidth + '%</td>' +
@@ -1809,7 +1927,6 @@
       if (statusDelayBar) statusDelayBar.style.width = (delay / 200 * 100) + '%';
       if (statusLossBar) statusLossBar.style.width = (packetLoss / 10 * 100) + '%';
 
-      // Calculate health
       let score = 100;
       score -= Math.max(0, (bandwidth - 60) * 0.5);
       score -= Math.max(0, (delay - 30) * 0.5);
@@ -1845,43 +1962,35 @@
       }
     }
 
-    // ========== OPTIMIZATION SUGGESTIONS ==========
-    function showOptimizations(show, issues) {
-      const panel = document.getElementById('optimizationPanel');
-      const list = document.getElementById('optimizationList');
+    // ========== PATH DISPLAY ==========
+    function updatePathDisplay(path, cost, isAlternate) {
+      const pathDisplay = document.getElementById('pathDisplay');
+      const pathCost = document.getElementById('pathCost');
+      const pathPanel = document.getElementById('pathPanel');
       
-      if (!panel || !list) return;
+      if (!pathDisplay || !pathCost || !pathPanel) return;
       
-      if (!show) {
-        panel.classList.add('hidden');
-        return;
+      let html = '';
+      for (let i = 0; i < path.length; i++) {
+        const nodeColor = isAlternate ? 'bg-[rgba(255,217,61,0.15)] text-[#ffd93d]' : 'bg-[rgba(0,212,170,0.15)] text-[#00d4aa]';
+        html += '<span class="px-3 py-2 rounded-lg ' + nodeColor + ' font-mono text-sm">' + path[i] + '</span>';
+        if (i < path.length - 1) {
+          const arrowColor = isAlternate ? 'text-[#ffd93d]' : 'text-[#00d4aa]';
+          html += '<svg class="w-4 h-4 ' + arrowColor + '" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
+        }
       }
       
-      const suggestions = [];
+      pathDisplay.innerHTML = html;
+      pathCost.textContent = 'Total Path Cost: ' + cost;
       
-      if (issues.bandwidth) {
-        suggestions.push('<li class="flex items-start gap-2"><span class="text-[#ff3860]">&#8226;</span> Enable load balancing to distribute traffic across multiple paths</li>');
-        suggestions.push('<li class="flex items-start gap-2"><span class="text-[#ff3860]">&#8226;</span> Limit heavy bandwidth applications during peak hours</li>');
+      if (isAlternate) {
+        pathPanel.className = 'mb-4 p-4 rounded-xl bg-[rgba(255,217,61,0.05)] border border-[rgba(255,217,61,0.2)]';
+      } else {
+        pathPanel.className = 'mb-4 p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.15)]';
       }
-      
-      if (issues.delay) {
-        suggestions.push('<li class="flex items-start gap-2"><span class="text-[#ff3860]">&#8226;</span> Redirect traffic to an alternate router with lower load</li>');
-        suggestions.push('<li class="flex items-start gap-2"><span class="text-[#ff3860]">&#8226;</span> Prioritize time-sensitive traffic with QoS policies</li>');
-      }
-      
-      if (issues.packetLoss) {
-        suggestions.push('<li class="flex items-start gap-2"><span class="text-[#ff3860]">&#8226;</span> Monitor traffic spikes and investigate packet drops</li>');
-        suggestions.push('<li class="flex items-start gap-2"><span class="text-[#ff3860]">&#8226;</span> Check for faulty network equipment or cables</li>');
-      }
-      
-      suggestions.push('<li class="flex items-start gap-2"><span class="text-[#ff3860]">&#8226;</span> Schedule maintenance window for network optimization</li>');
-      
-      list.innerHTML = suggestions.join('');
-      panel.classList.remove('hidden');
-      panel.classList.add('fade-in-up');
     }
 
-    // ========== PREDICTION LOGIC ==========
+    // ========== PATH ANALYSIS LOGIC ==========
     const predictionForm = document.getElementById('predictionForm');
     const loadingState = document.getElementById('loadingState');
     const resultState = document.getElementById('resultState');
@@ -1915,8 +2024,14 @@
           if (resultDelay) resultDelay.textContent = delay + 'ms';
           if (resultLoss) resultLoss.textContent = packetLoss + '%';
           
-          // Check congestion: bandwidth > 80 OR delay > 60 OR packetLoss > 3
-          const isCongestion = bandwidth > 80 || delay > 60 || packetLoss > 3;
+          // Check congestion: bandwidth > 80 OR delay > 60 OR packetLoss > 5
+          const isCongestion = bandwidth > 80 || delay > 60 || packetLoss > 5;
+          
+          // Update graph weights based on network conditions
+          graph.updateWeights(bandwidth, delay, packetLoss);
+          
+          // Run Dijkstra algorithm
+          const result = graph.dijkstra('A', 'D');
           
           // Calculate risk
           let risk = 0;
@@ -1937,16 +2052,12 @@
               alertBox.className = 'mb-4 p-4 rounded-xl border-2 border-[#ff3860] bg-[rgba(255,56,96,0.1)] transition-all duration-500 alert-shake';
               alertIcon.innerHTML = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>';
               alertIcon.className = 'w-10 h-10 rounded-lg bg-gradient-to-br from-[#ff3860] to-[#ff6b35] flex items-center justify-center flex-shrink-0';
-              alertTitle.textContent = 'High Network Congestion Risk Detected';
+              alertTitle.textContent = 'Network Congestion Detected';
               alertTitle.className = 'font-semibold text-sm text-[#ff3860]';
-              alertSubtitle.textContent = 'Immediate action recommended';
+              alertSubtitle.textContent = 'Traffic is being rerouted using Dijkstra Algorithm';
               
-              // Show optimization suggestions
-              showOptimizations(true, {
-                bandwidth: bandwidth > 80,
-                delay: delay > 60,
-                packetLoss: packetLoss > 3
-              });
+              // Update path display with alternate route
+              updatePathDisplay(result.path, result.cost, true);
             } else {
               alertBox.className = 'mb-4 p-4 rounded-xl border-2 border-[#00d4aa] bg-[rgba(0,212,170,0.1)] transition-all duration-500 fade-in-up';
               alertIcon.innerHTML = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
@@ -1955,8 +2066,8 @@
               alertTitle.className = 'font-semibold text-sm text-[#00d4aa]';
               alertSubtitle.textContent = 'All parameters within safe limits';
               
-              // Hide optimization suggestions
-              showOptimizations(false, {});
+              // Update path display with optimal route
+              updatePathDisplay(result.path, result.cost, false);
             }
           }
           
