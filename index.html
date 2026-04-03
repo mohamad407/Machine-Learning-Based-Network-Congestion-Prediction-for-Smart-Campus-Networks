@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dijkstra Network Congestion Detection - Smart Campus Networks</title>
+  <title>Smart Campus Network - Dijkstra Path Optimization</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,16 +25,8 @@
       --text-muted: #4a5a6a;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: 'Space Grotesk', sans-serif;
       background: var(--bg-primary);
@@ -43,17 +35,12 @@
       overflow-x: hidden;
       line-height: 1.7;
     }
-
-    .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
-
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
     #networkCanvas {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       z-index: 0;
       pointer-events: none;
     }
@@ -66,37 +53,16 @@
       border-radius: 16px;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
     .glass-card:hover {
       border-color: rgba(0, 212, 170, 0.35);
       transform: translateY(-4px);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 40px var(--accent-glow);
     }
 
-    .nav-link {
-      position: relative;
-      color: var(--text-secondary);
-      transition: color 0.3s ease;
-    }
-
-    .nav-link::after {
-      content: '';
-      position: absolute;
-      bottom: -4px;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background: var(--accent);
-      transition: width 0.3s ease;
-    }
-
-    .nav-link:hover {
-      color: var(--accent);
-    }
-
-    .nav-link:hover::after {
-      width: 100%;
-    }
+    .nav-link { position: relative; color: var(--text-secondary); transition: color 0.3s ease; }
+    .nav-link::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: var(--accent); transition: width 0.3s ease; }
+    .nav-link:hover { color: var(--accent); }
+    .nav-link:hover::after { width: 100%; }
 
     .btn-primary {
       background: linear-gradient(135deg, var(--accent), #00a88a);
@@ -110,30 +76,10 @@
       position: relative;
       overflow: hidden;
     }
-
-    .btn-primary::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-      transition: left 0.5s ease;
-    }
-
-    .btn-primary:hover::before {
-      left: 100%;
-    }
-
-    .btn-primary:hover {
-      transform: scale(1.02);
-      box-shadow: 0 8px 30px var(--accent-glow);
-    }
-
-    .btn-primary:active {
-      transform: scale(0.98);
-    }
+    .btn-primary::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s ease; }
+    .btn-primary:hover::before { left: 100%; }
+    .btn-primary:hover { transform: scale(1.02); box-shadow: 0 8px 30px var(--accent-glow); }
+    .btn-primary:active { transform: scale(0.98); }
 
     .input-field {
       background: rgba(5, 15, 25, 0.8);
@@ -146,350 +92,96 @@
       transition: all 0.3s ease;
       width: 100%;
     }
+    .input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+    .input-field::placeholder { color: var(--text-muted); }
 
-    .input-field:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 20px var(--accent-glow);
-    }
+    .status-normal { border-color: var(--success); box-shadow: 0 0 30px rgba(0, 212, 170, 0.2); }
+    .status-congestion { border-color: var(--danger); box-shadow: 0 0 30px rgba(255, 56, 96, 0.3); animation: pulse-danger 2s infinite; }
+    
+    @keyframes pulse-danger { 0%, 100% { box-shadow: 0 0 30px rgba(255, 56, 96, 0.3); } 50% { box-shadow: 0 0 50px rgba(255, 56, 96, 0.5); } }
+    
+    .loader { width: 48px; height: 48px; border: 4px solid var(--border-color); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .input-field::placeholder {
-      color: var(--text-muted);
-    }
+    .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .reveal.active { opacity: 1; transform: translateY(0); }
 
-    .status-normal {
-      border-color: var(--success);
-      box-shadow: 0 0 30px rgba(0, 212, 170, 0.2);
-    }
+    .chart-container { position: relative; height: 200px; }
 
-    .status-congestion {
-      border-color: var(--danger);
-      box-shadow: 0 0 30px rgba(255, 56, 96, 0.3);
-      animation: pulse-danger 2s infinite;
-    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-    @keyframes pulse-danger {
-      0%, 100% { box-shadow: 0 0 30px rgba(255, 56, 96, 0.3); }
-      50% { box-shadow: 0 0 50px rgba(255, 56, 96, 0.5); }
-    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+    *:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    
+    .counter { display: inline-block; }
 
-    .traffic-indicator {
-      width: 100%;
-      height: 8px;
-      background: var(--bg-secondary);
-      border-radius: 4px;
-      overflow: hidden;
-      position: relative;
-    }
+    .tooltip-container { position: relative; display: inline-flex; align-items: center; }
+    .tooltip-icon { width: 20px; height: 20px; border-radius: 50%; background: rgba(0, 212, 170, 0.15); border: 1px solid rgba(0, 212, 170, 0.3); display: flex; align-items: center; justify-content: center; cursor: help; margin-left: 8px; transition: all 0.3s ease; flex-shrink: 0; }
+    .tooltip-icon:hover { background: rgba(0, 212, 170, 0.25); transform: scale(1.1); }
+    .tooltip-icon svg { width: 12px; height: 12px; color: var(--accent); }
+    .tooltip-text { position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%); background: rgba(10, 20, 35, 0.98); border: 1px solid rgba(0, 212, 170, 0.2); border-radius: 10px; padding: 12px 16px; font-size: 12px; line-height: 1.6; color: var(--text-secondary); width: max-content; max-width: 300px; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 100; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); }
+    .tooltip-text::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 7px solid transparent; border-top-color: rgba(10, 20, 35, 0.98); }
+    .tooltip-container:hover .tooltip-text, .tooltip-container:focus-within .tooltip-text { opacity: 1; visibility: visible; }
 
-    .traffic-flow {
-      position: absolute;
-      height: 100%;
-      width: 30%;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      animation: flow 2s linear infinite;
-    }
+    .health-dot { width: 12px; height: 12px; border-radius: 50%; animation: health-pulse 2s ease-in-out infinite; }
+    .health-excellent { background: #00d4aa; box-shadow: 0 0 12px rgba(0, 212, 170, 0.6); }
+    .health-good { background: #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.6); }
+    .health-warning { background: #ffd93d; box-shadow: 0 0 12px rgba(255, 217, 61, 0.6); }
+    .health-critical { background: #ff3860; box-shadow: 0 0 12px rgba(255, 56, 96, 0.6); }
+    @keyframes health-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 
-    @keyframes flow {
-      0% { left: -30%; }
-      100% { left: 100%; }
-    }
+    .step-number { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), #00a88a); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--bg-primary); flex-shrink: 0; }
 
-    .loader {
-      width: 48px;
-      height: 48px;
-      border: 4px solid var(--border-color);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
+    .metric-bar { height: 6px; background: rgba(5, 15, 25, 0.8); border-radius: 3px; overflow: hidden; }
+    .metric-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    section { padding: 100px 0; }
+    @media (max-width: 768px) { section { padding: 60px 0; } }
 
-    .arch-node {
-      transition: all 0.3s ease;
-    }
+    .section-desc { text-align: center; color: var(--text-muted); font-size: 14px; max-width: 600px; margin: 0 auto 40px; }
 
-    .arch-node:hover {
-      transform: scale(1.05);
-      box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3);
-    }
+    @keyframes alert-shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } 20%, 40%, 60%, 80% { transform: translateX(4px); } }
+    .alert-shake { animation: alert-shake 0.6s ease-in-out; }
 
-    .arch-arrow {
-      animation: arrow-pulse 1.5s ease-in-out infinite;
-    }
+    @keyframes fade-in-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in-up { animation: fade-in-up 0.4s ease-out; }
 
-    @keyframes arrow-pulse {
-      0%, 100% { opacity: 0.5; }
-      50% { opacity: 1; }
-    }
-
-    .reveal {
-      opacity: 0;
-      transform: translateY(40px);
-      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .reveal.active {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .chart-container {
-      position: relative;
-      height: 220px;
-    }
-
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--bg-secondary);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--border-color);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--accent);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-
-    *:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-
-    .counter {
-      display: inline-block;
-    }
-
-    .tooltip-container {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .tooltip-icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: rgba(0, 212, 170, 0.15);
-      border: 1px solid rgba(0, 212, 170, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: help;
-      margin-left: 8px;
-      transition: all 0.3s ease;
-      flex-shrink: 0;
-    }
-
-    .tooltip-icon:hover {
-      background: rgba(0, 212, 170, 0.25);
-      transform: scale(1.1);
-    }
-
-    .tooltip-icon svg {
-      width: 12px;
-      height: 12px;
-      color: var(--accent);
-    }
-
-    .tooltip-text {
-      position: absolute;
-      bottom: calc(100% + 12px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(10, 20, 35, 0.98);
+    /* Topology Canvas Styles */
+    #topologyCanvas {
+      background: rgba(5, 10, 18, 0.9);
+      border-radius: 12px;
       border: 1px solid rgba(0, 212, 170, 0.2);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 12px;
-      line-height: 1.6;
-      color: var(--text-secondary);
-      width: max-content;
-      max-width: 300px;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-      z-index: 100;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     }
 
-    .tooltip-text::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 7px solid transparent;
-      border-top-color: rgba(10, 20, 35, 0.98);
+    .topology-legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 12px;
     }
 
-    .tooltip-container:hover .tooltip-text,
-    .tooltip-container:focus-within .tooltip-text {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .health-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      animation: health-pulse 2s ease-in-out infinite;
-    }
-
-    .health-excellent {
-      background: #00d4aa;
-      box-shadow: 0 0 12px rgba(0, 212, 170, 0.6);
-    }
-
-    .health-good {
-      background: #38bdf8;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
-    }
-
-    .health-warning {
-      background: #ffd93d;
-      box-shadow: 0 0 12px rgba(255, 217, 61, 0.6);
-    }
-
-    .health-critical {
-      background: #ff3860;
-      box-shadow: 0 0 12px rgba(255, 56, 96, 0.6);
-    }
-
-    @keyframes health-pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-    }
-
-    .step-number {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent), #00a88a);
+    .legend-item {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--bg-primary);
-      flex-shrink: 0;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
     }
 
-    .metric-bar {
-      height: 6px;
-      background: rgba(5, 15, 25, 0.8);
-      border-radius: 3px;
-      overflow: hidden;
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
     }
 
-    .metric-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.5s ease;
-    }
-
-    section {
-      padding: 120px 0;
-    }
-
-    @media (max-width: 768px) {
-      section {
-        padding: 80px 0;
-      }
-    }
-
-    .section-desc {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 14px;
-      max-width: 600px;
-      margin: 0 auto 48px;
-    }
-
-    @keyframes alert-shake {
-      0%, 100% { transform: translateX(0); }
-      10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-      20%, 40%, 60%, 80% { transform: translateX(4px); }
-    }
-
-    .alert-shake {
-      animation: alert-shake 0.6s ease-in-out;
-    }
-
-    @keyframes fade-in-up {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .fade-in-up {
-      animation: fade-in-up 0.4s ease-out;
-    }
-
-    @keyframes monitoring-pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    .monitoring-active {
-      animation: monitoring-pulse 1.5s ease-in-out infinite;
-    }
-
-    /* Network Topology Visualization */
-    .topology-node {
-      transition: all 0.3s ease;
-    }
-
-    .topology-node:hover {
-      transform: scale(1.1);
-    }
-
-    .topology-path {
-      stroke-dasharray: 8 4;
-      animation: path-flow 1s linear infinite;
-    }
-
-    @keyframes path-flow {
-      to {
-        stroke-dashoffset: -12;
-      }
-    }
-
-    .path-active {
-      stroke: #00d4aa;
-      stroke-width: 3;
-    }
-
-    .path-congested {
-      stroke: #ff3860;
-      stroke-width: 2;
-    }
-
-    .path-alternate {
-      stroke: #ffd93d;
-      stroke-width: 3;
-      stroke-dasharray: 8 4;
+    .legend-line {
+      width: 20px;
+      height: 3px;
+      border-radius: 2px;
     }
   </style>
 </head>
@@ -502,34 +194,28 @@
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
-            <svg class="w-6 h-6 text-[#050a12]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
-            </svg>
+            <svg class="w-6 h-6 text-[#050a12]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
           </div>
-          <span class="font-mono text-sm font-semibold text-[#00d4aa]">NetPath Monitor</span>
+          <span class="font-mono text-sm font-semibold text-[#00d4aa]">Campus NetPath</span>
         </div>
         <div class="hidden md:flex items-center gap-8">
           <a href="#home" class="nav-link text-sm font-medium">Home</a>
-          <a href="#how-it-works" class="nav-link text-sm font-medium">How It Works</a>
+          <a href="#topology" class="nav-link text-sm font-medium">Topology</a>
           <a href="#monitor" class="nav-link text-sm font-medium">Monitor</a>
           <a href="#analytics" class="nav-link text-sm font-medium">Analytics</a>
-          <a href="#use-cases" class="nav-link text-sm font-medium">Use Cases</a>
           <a href="#results" class="nav-link text-sm font-medium">Results</a>
         </div>
         <button id="mobileMenuBtn" class="md:hidden p-2 rounded-lg hover:bg-[rgba(0,212,170,0.1)]" aria-label="Toggle menu">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
       </div>
     </div>
     <div id="mobileMenu" class="hidden md:hidden bg-[rgba(5,10,20,0.98)] border-t border-[rgba(0,212,170,0.1)]">
       <div class="px-4 py-4 space-y-3">
         <a href="#home" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Home</a>
-        <a href="#how-it-works" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">How It Works</a>
+        <a href="#topology" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Topology</a>
         <a href="#monitor" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Monitor</a>
         <a href="#analytics" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Analytics</a>
-        <a href="#use-cases" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Use Cases</a>
         <a href="#results" class="block py-2 text-sm font-medium text-[#7a8a9a] hover:text-[#00d4aa]">Results</a>
       </div>
     </div>
@@ -541,259 +227,157 @@
     <div class="relative z-10 text-center max-w-4xl mx-auto reveal">
       <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-8">
         <span class="w-2 h-2 rounded-full bg-[#00d4aa] animate-pulse"></span>
-        <span class="text-sm font-mono text-[#00d4aa]">Dijkstra Algorithm Based Path Optimization</span>
+        <span class="text-sm font-mono text-[#00d4aa]">Smart Campus Network Simulation</span>
       </div>
       <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
         <span class="text-[#e8f0f5]">Dijkstra Algorithm Based</span><br>
-        <span class="bg-gradient-to-r from-[#00d4aa] to-[#00a88a] bg-clip-text text-transparent">Network Congestion Detection</span>
+        <span class="bg-gradient-to-r from-[#00d4aa] to-[#00a88a] bg-clip-text text-transparent">Network Path Optimization</span>
       </h1>
       <p class="text-lg sm:text-xl text-[#7a8a9a] max-w-2xl mx-auto mb-6 leading-relaxed">
-        A network optimization system that uses Dijkstra's algorithm to detect congestion and find alternate optimal paths for data routing.
+        Real-time campus network monitoring with intelligent path optimization using Dijkstra's shortest path algorithm.
       </p>
       <p class="text-sm text-[#4a5a6a] max-w-xl mx-auto mb-10">
-        This project demonstrates how Dijkstra's shortest path algorithm can optimize network routing in smart campus environments by monitoring bandwidth, delay, and packet loss.
+        This system models a smart campus network where buildings such as the Admin Block, Library, Hostel, Academic Block, and Laboratory are connected through routers. The system monitors traffic conditions and applies Dijkstra Algorithm to determine the most efficient routing path during congestion.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="#monitor" class="btn-primary text-base">Start Monitoring</a>
-        <a href="#how-it-works" class="px-8 py-4 rounded-xl border border-[rgba(0,212,170,0.3)] text-[#00d4aa] font-medium hover:bg-[rgba(0,212,170,0.1)] transition-all">Learn How It Works</a>
+        <a href="#topology" class="btn-primary text-base">View Network Topology</a>
+        <a href="#monitor" class="px-8 py-4 rounded-xl border border-[rgba(0,212,170,0.3)] text-[#00d4aa] font-medium hover:bg-[rgba(0,212,170,0.1)] transition-all">Start Monitoring</a>
       </div>
       
-      <!-- Live Stats -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-16">
         <div class="glass-card p-5">
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="5">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Campus Routers</div>
+        </div>
+        <div class="glass-card p-5">
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="8">0</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Network Links</div>
+        </div>
+        <div class="glass-card p-5">
           <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="99.2">0</div>
-          <div class="text-xs text-[#7a8a9a] mt-1">Path Optimization %</div>
-        </div>
-        <div class="glass-card p-5">
-          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="4">0</div>
-          <div class="text-xs text-[#7a8a9a] mt-1">Network Routers</div>
-        </div>
-        <div class="glass-card p-5">
-          <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="6">0</div>
-          <div class="text-xs text-[#7a8a9a] mt-1">Active Links</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Path Accuracy %</div>
         </div>
         <div class="glass-card p-5">
           <div class="text-2xl font-bold text-[#00d4aa] font-mono counter" data-target="24">0</div>
-          <div class="text-xs text-[#7a8a9a] mt-1">Hours Uptime</div>
+          <div class="text-xs text-[#7a8a9a] mt-1">Hours Monitoring</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- About Section -->
-  <section id="about" class="relative px-4">
+  <!-- Network Topology Section -->
+  <section id="topology" class="relative px-4">
     <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">UNDERSTANDING THE PROBLEM</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">What is Network Congestion?</h2>
-        <p class="section-desc">Learn why networks slow down and how Dijkstra's algorithm helps optimize routing</p>
-      </div>
-      
-      <div class="grid md:grid-cols-3 gap-8 reveal">
-        <div class="glass-card p-8 group">
-          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ff6b35] to-[#ff8f65] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">What is Network Congestion?</h3>
-          <p class="text-[#7a8a9a] text-sm leading-relaxed mb-4">
-            Network congestion occurs when more data is sent through a network link than it can handle. Like a traffic jam on a highway, too many data packets cause delays, increased latency, and packet loss.
-          </p>
-          <div class="pt-4 border-t border-[rgba(0,212,170,0.1)]">
-            <p class="text-xs text-[#4a5a6a]"><span class="text-[#e8f0f5] font-medium">Key signs:</span> Slow loading, buffering videos, dropped connections</p>
-          </div>
-        </div>
-        
-        <div class="glass-card p-8 group">
-          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#ffd93d] to-[#ffb700] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <svg class="w-7 h-7 text-[#050a12]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">Why Campus Networks Face This Issue</h3>
-          <p class="text-[#7a8a9a] text-sm leading-relaxed mb-4">
-            Campus networks serve thousands of users simultaneously. Students streaming videos, attending online classes, and downloading files create traffic spikes that overwhelm network links and routers.
-          </p>
-          <div class="pt-4 border-t border-[rgba(0,212,170,0.1)]">
-            <p class="text-xs text-[#4a5a6a]"><span class="text-[#e8f0f5] font-medium">Peak times:</span> Morning classes, evening entertainment, exam periods</p>
-          </div>
-        </div>
-        
-        <div class="glass-card p-8 group">
-          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-3">How Dijkstra Algorithm Solves This</h3>
-          <p class="text-[#7a8a9a] text-sm leading-relaxed mb-4">
-            Dijkstra's algorithm finds the shortest path between network nodes. When congestion is detected on a primary path, the system calculates alternate optimal routes to reroute traffic efficiently.
-          </p>
-          <div class="pt-4 border-t border-[rgba(0,212,170,0.1)]">
-            <p class="text-xs text-[#4a5a6a]"><span class="text-[#e8f0f5] font-medium">Benefit:</span> Dynamic path optimization reduces congestion impact</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- How It Works Section -->
-  <section id="how-it-works" class="relative px-4">
-    <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,212,170,0.02)] to-transparent pointer-events-none"></div>
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">ALGORITHM PROCESS</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">How Dijkstra Algorithm Optimizes Routing</h2>
-        <p class="section-desc">Step-by-step explanation of network path optimization using Dijkstra's shortest path algorithm</p>
-      </div>
-
-      <div class="grid lg:grid-cols-2 gap-12 items-start reveal">
-        <div class="space-y-5">
-          <div class="glass-card p-6 flex gap-4">
-            <div class="step-number">1</div>
-            <div>
-              <h4 class="font-semibold text-lg mb-1">Monitor Network Parameters</h4>
-              <p class="text-[#7a8a9a] text-sm">Network sensors continuously measure bandwidth usage, network delay, and packet loss on each link between routers.</p>
-            </div>
-          </div>
-          
-          <div class="glass-card p-6 flex gap-4">
-            <div class="step-number">2</div>
-            <div>
-              <h4 class="font-semibold text-lg mb-1">Calculate Link Weights</h4>
-              <p class="text-[#7a8a9a] text-sm">Each network link is assigned a weight based on congestion level. Higher bandwidth usage and delay result in higher weights.</p>
-            </div>
-          </div>
-          
-          <div class="glass-card p-6 flex gap-4">
-            <div class="step-number">3</div>
-            <div>
-              <h4 class="font-semibold text-lg mb-1">Detect Congestion</h4>
-              <p class="text-[#7a8a9a] text-sm">When any parameter exceeds threshold (Bandwidth &gt;80%, Delay &gt;60ms, Packet Loss &gt;5%), the link is marked as congested.</p>
-            </div>
-          </div>
-          
-          <div class="glass-card p-6 flex gap-4">
-            <div class="step-number">4</div>
-            <div>
-              <h4 class="font-semibold text-lg mb-1">Run Dijkstra Algorithm</h4>
-              <p class="text-[#7a8a9a] text-sm">The algorithm calculates the shortest path from source to destination, avoiding congested links by considering their higher weights.</p>
-            </div>
-          </div>
-          
-          <div class="glass-card p-6 flex gap-4">
-            <div class="step-number">5</div>
-            <div>
-              <h4 class="font-semibold text-lg mb-1">Reroute Traffic</h4>
-              <p class="text-[#7a8a9a] text-sm">Traffic is automatically rerouted through the optimal alternate path, bypassing congested links and reducing network load.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="glass-card p-8">
-          <h4 class="font-semibold mb-6 text-center">Network Topology</h4>
-          <div class="flex flex-col gap-3">
-            <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.15)]">
-              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
-                <span class="text-white font-bold text-sm">A</span>
-              </div>
-              <span class="text-sm font-medium">Router A (Source)</span>
-            </div>
-            <div class="flex justify-center">
-              <svg class="w-6 h-6 text-[#00d4aa] arch-arrow" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </div>
-            <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(255,217,61,0.05)] border border-[rgba(255,217,61,0.15)]">
-              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#ffd93d] to-[#ff8f65] flex items-center justify-center">
-                <span class="text-white font-bold text-sm">B</span>
-              </div>
-              <span class="text-sm font-medium">Router B (Core)</span>
-            </div>
-            <div class="flex justify-center">
-              <svg class="w-6 h-6 text-[#ffd93d] arch-arrow" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </div>
-            <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(56,189,248,0.05)] border border-[rgba(56,189,248,0.15)]">
-              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] flex items-center justify-center">
-                <span class="text-white font-bold text-sm">C</span>
-              </div>
-              <span class="text-sm font-medium">Router C (Distribution)</span>
-            </div>
-            <div class="flex justify-center">
-              <svg class="w-6 h-6 text-[#38bdf8] arch-arrow" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </div>
-            <div class="flex items-center justify-center gap-3 p-4 rounded-xl bg-[rgba(167,139,250,0.05)] border border-[rgba(167,139,250,0.15)]">
-              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] flex items-center justify-center">
-                <span class="text-white font-bold text-sm">D</span>
-              </div>
-              <span class="text-sm font-medium">Router D (Destination)</span>
-            </div>
-          </div>
-          <p class="text-xs text-[#4a5a6a] text-center mt-6">Dijkstra finds the shortest weighted path through this topology</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Network Monitor Section -->
-  <section id="monitor" class="relative px-4">
-    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(0,212,170,0.02)] to-transparent pointer-events-none"></div>
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">CONGESTION DETECTION</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Path Analyzer</h2>
-        <p class="section-desc">Enter network parameters to analyze congestion and find optimal paths using Dijkstra's algorithm</p>
+      <div class="text-center mb-8 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">CAMPUS NETWORK</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Interactive Network Topology</h2>
+        <p class="section-desc">Visual representation of the smart campus network. Nodes represent routers at each building, edges represent network links with dynamic weights.</p>
       </div>
 
       <div class="grid lg:grid-cols-3 gap-6 reveal">
-        <!-- Real-time Status Card -->
-        <div class="glass-card p-6">
+        <!-- Topology Visualization -->
+        <div class="lg:col-span-2 glass-card p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold flex items-center gap-2">
-              <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-              </svg>
-              Real-time Status
+              <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+              Campus Network Topology
             </h3>
-            <div class="flex items-center gap-2">
-              <div id="healthDot" class="health-dot health-good"></div>
-              <span id="healthLabel" class="text-xs font-medium text-[#38bdf8]">Good</span>
+            <span id="topologyStatus" class="text-xs font-mono text-[#00d4aa]">Normal</span>
+          </div>
+          <canvas id="topologyCanvas" width="700" height="400"></canvas>
+          <div class="topology-legend">
+            <div class="legend-item"><div class="legend-dot" style="background: #00d4aa;"></div><span>Normal Link</span></div>
+            <div class="legend-item"><div class="legend-line" style="background: #ff3860;"></div><span>Congested</span></div>
+            <div class="legend-item"><div class="legend-line" style="background: #38bdf8;"></div><span>Optimal Path</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background: #ffd93d;"></div><span>Active Packet</span></div>
+          </div>
+        </div>
+
+        <!-- Path Result -->
+        <div class="glass-card p-6">
+          <h3 class="font-semibold mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+            Optimal Path Result
+          </h3>
+          
+          <div class="space-y-4">
+            <div class="p-3 rounded-lg bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
+              <div class="text-xs text-[#7a8a9a] mb-1">Source Node</div>
+              <div id="sourceNode" class="font-mono font-bold text-[#00d4aa]">Admin Block (A)</div>
+            </div>
+            
+            <div class="p-3 rounded-lg bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
+              <div class="text-xs text-[#7a8a9a] mb-1">Destination Node</div>
+              <div id="destNode" class="font-mono font-bold text-[#a78bfa]">Laboratory (E)</div>
+            </div>
+            
+            <div class="p-4 rounded-xl bg-[rgba(56,189,248,0.1)] border border-[rgba(56,189,248,0.2)]">
+              <div class="text-xs text-[#7a8a9a] mb-2">Computed Optimal Path</div>
+              <div id="pathResult" class="font-mono text-lg font-bold text-[#38bdf8]">A → B → E</div>
+              <div id="pathCost" class="text-xs text-[#7a8a9a] mt-2">Total Cost: 12</div>
+            </div>
+            
+            <div id="congestionAlert" class="hidden p-3 rounded-lg bg-[rgba(255,56,96,0.1)] border border-[rgba(255,56,96,0.2)]">
+              <div class="flex items-center gap-2 text-[#ff3860]">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span class="text-sm font-medium">Congestion Detected</span>
+              </div>
+              <p id="congestionMsg" class="text-xs text-[#7a8a9a] mt-1">Link A-B is congested. Rerouting...</p>
             </div>
           </div>
-          
-          <!-- Monitoring Indicator -->
-          <div class="flex items-center gap-2 mb-6 p-3 rounded-lg bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
-            <div class="w-2 h-2 rounded-full bg-[#00d4aa] monitoring-active"></div>
-            <span class="text-xs text-[#7a8a9a]">Monitoring Network Traffic...</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Monitor Section -->
+  <section id="monitor" class="relative px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-8 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">PARAMETERS</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Parameter Input</h2>
+        <p class="section-desc">Enter network parameters to simulate traffic conditions and observe path optimization in real-time.</p>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-6 reveal">
+        <!-- Real-time Status -->
+        <div class="glass-card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold">Network Status</h3>
+            <div class="flex items-center gap-2">
+              <div id="healthDot" class="health-dot health-excellent"></div>
+              <span id="healthLabel" class="text-xs font-medium text-[#00d4aa]">Excellent</span>
+            </div>
           </div>
 
-          <div class="space-y-5">
+          <div class="space-y-4">
             <div>
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm text-[#7a8a9a]">Bandwidth Load</span>
-                <span id="statusBandwidth" class="text-sm font-mono text-[#00d4aa]">75%</span>
+                <span id="statusBandwidth" class="text-sm font-mono text-[#00d4aa]">50%</span>
               </div>
               <div class="metric-bar">
-                <div id="statusBandwidthBar" class="metric-fill bg-gradient-to-r from-[#00d4aa] to-[#00a88a]" style="width: 75%"></div>
+                <div id="statusBandwidthBar" class="metric-fill bg-gradient-to-r from-[#00d4aa] to-[#00a88a]" style="width: 50%"></div>
               </div>
             </div>
 
             <div>
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm text-[#7a8a9a]">Network Delay</span>
-                <span id="statusDelay" class="text-sm font-mono text-[#ffd93d]">45ms</span>
+                <span id="statusDelay" class="text-sm font-mono text-[#ffd93d]">30ms</span>
               </div>
               <div class="metric-bar">
-                <div id="statusDelayBar" class="metric-fill bg-gradient-to-r from-[#ffd93d] to-[#ff8f65]" style="width: 22.5%"></div>
+                <div id="statusDelayBar" class="metric-fill bg-gradient-to-r from-[#ffd93d] to-[#ff8f65]" style="width: 15%"></div>
               </div>
             </div>
 
             <div>
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm text-[#7a8a9a]">Packet Loss</span>
-                <span id="statusLoss" class="text-sm font-mono text-[#ff3860]">1.5%</span>
+                <span id="statusLoss" class="text-sm font-mono text-[#ff3860]">1.0%</span>
               </div>
               <div class="metric-bar">
-                <div id="statusLossBar" class="metric-fill bg-gradient-to-r from-[#ff3860] to-[#ff6b35]" style="width: 15%"></div>
+                <div id="statusLossBar" class="metric-fill bg-gradient-to-r from-[#ff3860] to-[#ff6b35]" style="width: 10%"></div>
               </div>
             </div>
           </div>
@@ -801,218 +385,125 @@
           <div class="mt-6 p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
             <div class="flex items-center justify-between">
               <span class="text-sm text-[#7a8a9a]">Network Health</span>
-              <span id="healthScore" class="text-xl font-bold font-mono text-[#00d4aa]">Good</span>
+              <span id="healthScore" class="text-xl font-bold font-mono text-[#00d4aa]">Excellent</span>
             </div>
           </div>
         </div>
 
         <!-- Input Panel -->
         <div class="glass-card p-6">
-          <h3 class="font-semibold mb-6 flex items-center gap-2">
-            <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-            </svg>
-            Network Parameters
-          </h3>
+          <h3 class="font-semibold mb-6">Input Parameters</h3>
           
-          <form id="predictionForm" class="space-y-5">
-            <!-- Bandwidth -->
+          <form id="parameterForm" class="space-y-5">
             <div>
               <div class="flex items-center mb-2">
                 <label class="block text-sm font-medium text-[#7a8a9a]">Bandwidth Usage</label>
                 <div class="tooltip-container">
-                  <div class="tooltip-icon" tabindex="0" aria-label="Bandwidth explanation">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  </div>
-                  <div class="tooltip-text">
-                    <strong class="text-[#e8f0f5]">Bandwidth Usage</strong><br>
-                    The percentage of available network capacity being used on the current link. When usage exceeds 80%, the link weight increases for Dijkstra calculation.
-                  </div>
+                  <div class="tooltip-icon" tabindex="0"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                  <div class="tooltip-text"><strong class="text-[#e8f0f5]">Bandwidth Usage</strong><br>Percentage of available network capacity being used. Above 80% triggers congestion detection.</div>
                 </div>
               </div>
               <div class="relative">
-                <input type="number" id="bandwidth" class="input-field pr-12" placeholder="0-100" min="0" max="100" value="75" required>
+                <input type="number" id="bandwidth" class="input-field pr-12" placeholder="0-100" min="0" max="100" value="50" required>
                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a5a6a] font-mono text-sm">%</span>
               </div>
               <div class="mt-2 h-1 bg-[#0c1220] rounded-full overflow-hidden">
-                <div id="bandwidthBar" class="h-full bg-gradient-to-r from-[#00d4aa] to-[#00a88a] transition-all duration-500" style="width: 75%"></div>
+                <div id="bandwidthBar" class="h-full bg-gradient-to-r from-[#00d4aa] to-[#00a88a] transition-all duration-500" style="width: 50%"></div>
               </div>
               <p class="text-xs text-[#4a5a6a] mt-1">Normal: 0-60% | Warning: 60-80% | Critical: 80%+</p>
             </div>
 
-            <!-- Delay -->
             <div>
               <div class="flex items-center mb-2">
                 <label class="block text-sm font-medium text-[#7a8a9a]">Network Delay</label>
                 <div class="tooltip-container">
-                  <div class="tooltip-icon" tabindex="0" aria-label="Delay explanation">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  </div>
-                  <div class="tooltip-text">
-                    <strong class="text-[#e8f0f5]">Network Delay (Latency)</strong><br>
-                    Time in milliseconds for data to travel between nodes. Higher delay increases link weight in path calculation.
-                  </div>
+                  <div class="tooltip-icon" tabindex="0"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                  <div class="tooltip-text"><strong class="text-[#e8f0f5]">Network Delay</strong><br>Time for data to travel between nodes. Above 60ms indicates congestion.</div>
                 </div>
               </div>
               <div class="relative">
-                <input type="number" id="delay" class="input-field pr-12" placeholder="0-200" min="0" max="200" value="45" required>
+                <input type="number" id="delay" class="input-field pr-12" placeholder="0-200" min="0" max="200" value="30" required>
                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a5a6a] font-mono text-sm">ms</span>
               </div>
               <div class="mt-2 h-1 bg-[#0c1220] rounded-full overflow-hidden">
-                <div id="delayBar" class="h-full bg-gradient-to-r from-[#ffd93d] to-[#ff6b35] transition-all duration-500" style="width: 22.5%"></div>
+                <div id="delayBar" class="h-full bg-gradient-to-r from-[#ffd93d] to-[#ff6b35] transition-all duration-500" style="width: 15%"></div>
               </div>
               <p class="text-xs text-[#4a5a6a] mt-1">Normal: 0-30ms | Warning: 30-60ms | Critical: 60ms+</p>
             </div>
 
-            <!-- Packet Loss -->
             <div>
               <div class="flex items-center mb-2">
                 <label class="block text-sm font-medium text-[#7a8a9a]">Packet Loss</label>
                 <div class="tooltip-container">
-                  <div class="tooltip-icon" tabindex="0" aria-label="Packet loss explanation">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  </div>
-                  <div class="tooltip-text">
-                    <strong class="text-[#e8f0f5]">Packet Loss</strong><br>
-                    Percentage of data packets that fail to reach their destination. High packet loss significantly increases link weight.
-                  </div>
+                  <div class="tooltip-icon" tabindex="0"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                  <div class="tooltip-text"><strong class="text-[#e8f0f5]">Packet Loss</strong><br>Percentage of data packets lost. Above 5% significantly impacts performance.</div>
                 </div>
               </div>
               <div class="relative">
-                <input type="number" id="packetLoss" class="input-field pr-12" placeholder="0-10" min="0" max="10" step="0.1" value="1.5" required>
+                <input type="number" id="packetLoss" class="input-field pr-12" placeholder="0-10" min="0" max="10" step="0.1" value="1.0" required>
                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[#4a5a6a] font-mono text-sm">%</span>
               </div>
               <div class="mt-2 h-1 bg-[#0c1220] rounded-full overflow-hidden">
-                <div id="packetBar" class="h-full bg-gradient-to-r from-[#ff3860] to-[#ff6b35] transition-all duration-500" style="width: 15%"></div>
+                <div id="packetBar" class="h-full bg-gradient-to-r from-[#ff3860] to-[#ff6b35] transition-all duration-500" style="width: 10%"></div>
               </div>
               <p class="text-xs text-[#4a5a6a] mt-1">Normal: 0-1% | Warning: 1-5% | Critical: 5%+</p>
             </div>
 
             <button type="submit" class="btn-primary w-full flex items-center justify-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-              </svg>
-              Analyze Path
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              Analyze Network
             </button>
           </form>
         </div>
 
         <!-- Result Panel -->
         <div class="glass-card p-6">
-          <h3 class="font-semibold mb-6 flex items-center gap-2">
-            <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            Analysis Result
-          </h3>
+          <h3 class="font-semibold mb-4">Analysis Result</h3>
           
           <div id="loadingState" class="hidden flex flex-col items-center justify-center py-12">
             <div class="loader mb-4"></div>
-            <span class="text-[#7a8a9a] text-sm">Calculating optimal path...</span>
-            <span class="text-[#4a5a6a] text-xs mt-1">Running Dijkstra algorithm</span>
+            <span class="text-[#7a8a9a] text-sm">Computing optimal path...</span>
           </div>
           
           <div id="resultState">
-            <!-- Alert Message -->
-            <div id="alertBox" class="mb-4 p-4 rounded-xl border-2 transition-all duration-500">
-              <div class="flex items-center gap-3">
-                <div id="alertIcon" class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"></div>
+            <div id="resultCard" class="p-4 rounded-xl mb-4 border-2 border-[rgba(0,212,170,0.2)] bg-[rgba(0,212,170,0.05)]">
+              <div class="grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <div id="alertTitle" class="font-semibold text-sm"></div>
-                  <div id="alertSubtitle" class="text-xs text-[#7a8a9a]"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Metrics -->
-            <div id="resultCard" class="glass-card p-4 mb-4">
-              <div class="grid grid-cols-3 gap-3">
-                <div class="text-center p-3 rounded-lg bg-[rgba(0,212,170,0.05)]">
-                  <div id="resultBandwidth" class="text-base font-mono font-bold text-[#00d4aa]">--</div>
+                  <div id="resultBandwidth" class="text-lg font-mono font-bold text-[#00d4aa]">--</div>
                   <div class="text-xs text-[#7a8a9a]">Bandwidth</div>
                 </div>
-                <div class="text-center p-3 rounded-lg bg-[rgba(255,217,61,0.05)]">
-                  <div id="resultDelay" class="text-base font-mono font-bold text-[#ffd93d]">--</div>
+                <div>
+                  <div id="resultDelay" class="text-lg font-mono font-bold text-[#ffd93d]">--</div>
                   <div class="text-xs text-[#7a8a9a]">Delay</div>
                 </div>
-                <div class="text-center p-3 rounded-lg bg-[rgba(255,56,96,0.05)]">
-                  <div id="resultLoss" class="text-base font-mono font-bold text-[#ff3860]">--</div>
+                <div>
+                  <div id="resultLoss" class="text-lg font-mono font-bold text-[#ff3860]">--</div>
                   <div class="text-xs text-[#7a8a9a]">Loss</div>
                 </div>
               </div>
             </div>
             
-            <!-- Optimal Path Display -->
-            <div id="pathPanel" class="mb-4 p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.15)]">
-              <h4 class="text-sm font-semibold text-[#00d4aa] mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                </svg>
-                Optimal Path
-              </h4>
-              <div id="pathDisplay" class="flex items-center justify-center gap-2 py-3">
-                <span class="px-3 py-2 rounded-lg bg-[rgba(0,212,170,0.15)] text-[#00d4aa] font-mono text-sm">A</span>
-                <svg class="w-4 h-4 text-[#00d4aa]" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                <span class="px-3 py-2 rounded-lg bg-[rgba(0,212,170,0.15)] text-[#00d4aa] font-mono text-sm">B</span>
-                <svg class="w-4 h-4 text-[#00d4aa]" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                <span class="px-3 py-2 rounded-lg bg-[rgba(0,212,170,0.15)] text-[#00d4aa] font-mono text-sm">D</span>
-              </div>
-              <div id="pathCost" class="text-xs text-[#7a8a9a] text-center">Total Path Cost: 15</div>
-            </div>
-            
-            <!-- Risk Level -->
             <div class="mb-4">
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm text-[#7a8a9a]">Congestion Risk Level</span>
-                <span id="riskPercent" class="text-sm font-mono text-[#e8f0f5]">25%</span>
+                <span class="text-sm text-[#7a8a9a]">Congestion Risk</span>
+                <span id="riskPercent" class="text-sm font-mono">--</span>
               </div>
               <div class="h-3 bg-[#0c1220] rounded-full overflow-hidden">
-                <div id="riskBar" class="h-full bg-gradient-to-r from-[#00d4aa] via-[#ffd93d] to-[#ff3860] transition-all duration-700" style="width: 25%"></div>
-              </div>
-              <div class="flex justify-between text-xs text-[#4a5a6a] mt-1">
-                <span>Low</span>
-                <span>Medium</span>
-                <span>High</span>
+                <div id="riskBar" class="h-full bg-gradient-to-r from-[#00d4aa] via-[#ffd93d] to-[#ff3860] transition-all duration-700" style="width: 0%"></div>
               </div>
             </div>
 
-            <!-- Explanation -->
-            <div class="p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
-              <p class="text-xs text-[#7a8a9a]">
-                <span class="text-[#e8f0f5] font-medium">Algorithm:</span> Dijkstra's algorithm calculates the shortest path by considering link weights derived from bandwidth, delay, and packet loss metrics.
-              </p>
+            <div id="alertBox" class="p-4 rounded-xl border-2 border-[rgba(0,212,170,0.2)] bg-[rgba(0,212,170,0.05)]">
+              <div class="flex items-center gap-3">
+                <div id="alertIcon" class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                  <div id="alertTitle" class="font-semibold text-sm text-[#00d4aa]">Network Normal</div>
+                  <div id="alertSubtitle" class="text-xs text-[#7a8a9a]">All parameters within safe limits</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Alert History -->
-      <div class="mt-8 reveal">
-        <div class="glass-card p-6">
-          <h3 class="font-semibold mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Analysis History
-          </h3>
-          <p class="text-xs text-[#4a5a6a] mb-4">Recent path analysis results recorded during this session</p>
-          <div class="overflow-x-auto">
-            <table class="w-full text-xs">
-              <thead>
-                <tr class="border-b border-[rgba(0,212,170,0.1)]">
-                  <th class="text-left py-3 px-3 text-[#7a8a9a] font-medium">Time</th>
-                  <th class="text-center py-3 px-3 text-[#7a8a9a] font-medium">Bandwidth</th>
-                  <th class="text-center py-3 px-3 text-[#7a8a9a] font-medium">Delay</th>
-                  <th class="text-center py-3 px-3 text-[#7a8a9a] font-medium">Packet Loss</th>
-                  <th class="text-center py-3 px-3 text-[#7a8a9a] font-medium">Result</th>
-                </tr>
-              </thead>
-              <tbody id="historyTable">
-                <tr class="border-b border-[rgba(0,212,170,0.05)]">
-                  <td class="py-3 px-3 text-[#4a5a6a]" colspan="5">No analysis recorded yet. Run a path analysis to see results here.</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -1022,186 +513,43 @@
   <!-- Analytics Section -->
   <section id="analytics" class="relative px-4">
     <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">VISUAL ANALYTICS</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Performance Charts</h2>
-        <p class="section-desc">Visualize network metrics over a 24-hour period. Charts update when you run a path analysis.</p>
+      <div class="text-center mb-8 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">ANALYTICS</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Network Performance Analytics</h2>
+        <p class="section-desc">Real-time charts showing network metrics calculated from your input parameters.</p>
       </div>
 
-      <div class="glass-card p-4 mb-8 reveal">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium">Live Network Traffic Flow</span>
-          <span class="text-xs font-mono text-[#00d4aa]">Active</span>
-        </div>
-        <div class="traffic-indicator">
-          <div class="traffic-flow"></div>
-        </div>
-        <p class="text-xs text-[#4a5a6a] mt-2">Animated visualization of data packets moving through the network</p>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-8 reveal">
-        <!-- Bandwidth Chart -->
+      <div class="grid md:grid-cols-2 gap-6 reveal">
         <div class="glass-card p-6">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-[#00d4aa]"></span>
-              Bandwidth Usage Over Time
-            </h3>
-            <span id="bandwidthAvg" class="text-xs font-mono text-[#7a8a9a]">Avg: --</span>
-          </div>
-          <p class="text-xs text-[#4a5a6a] mb-4">Shows network capacity usage throughout the day. Peak hours show higher consumption.</p>
-          <div class="chart-container">
-            <canvas id="bandwidthChart"></canvas>
-          </div>
-          <div class="mt-3 flex items-center gap-6 text-xs">
-            <div class="flex items-center gap-1">
-              <span class="w-3 h-3 rounded bg-[#00d4aa]"></span>
-              <span class="text-[#7a8a9a]">Bandwidth %</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <span class="w-8 h-0.5 bg-[#ff3860]"></span>
-              <span class="text-[#7a8a9a]">80% Threshold</span>
-            </div>
-          </div>
+          <h3 class="font-semibold mb-4 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-[#00d4aa]"></span>
+            Bandwidth Distribution by Node
+          </h3>
+          <div class="chart-container"><canvas id="bandwidthChart"></canvas></div>
         </div>
-
-        <!-- Delay Chart -->
+        
         <div class="glass-card p-6">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-[#ffd93d]"></span>
-              Network Delay Trend
-            </h3>
-            <span id="delayAvg" class="text-xs font-mono text-[#7a8a9a]">Avg: --</span>
-          </div>
-          <p class="text-xs text-[#4a5a6a] mb-4">Tracks round-trip delay. Spikes indicate congestion periods affecting responsiveness.</p>
-          <div class="chart-container">
-            <canvas id="delayChart"></canvas>
-          </div>
-          <div class="mt-3 flex items-center gap-6 text-xs">
-            <div class="flex items-center gap-1">
-              <span class="w-3 h-3 rounded bg-[#ffd93d]"></span>
-              <span class="text-[#7a8a9a]">Delay (ms)</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <span class="w-8 h-0.5 bg-[#ff3860]"></span>
-              <span class="text-[#7a8a9a]">60ms Threshold</span>
-            </div>
-          </div>
+          <h3 class="font-semibold mb-4 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-[#ffd93d]"></span>
+            Network Delay by Link
+          </h3>
+          <div class="chart-container"><canvas id="delayChart"></canvas></div>
         </div>
-
-        <!-- Packet Loss Chart -->
+        
         <div class="glass-card p-6">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-[#ff3860]"></span>
-              Packet Loss Statistics
-            </h3>
-            <span id="lossAvg" class="text-xs font-mono text-[#7a8a9a]">Avg: --</span>
-          </div>
-          <p class="text-xs text-[#4a5a6a] mb-4">Shows packet loss percentage. Values above 5% cause noticeable degradation in calls and streams.</p>
-          <div class="chart-container">
-            <canvas id="packetLossChart"></canvas>
-          </div>
-          <div class="mt-3 flex items-center gap-6 text-xs">
-            <div class="flex items-center gap-1">
-              <span class="w-3 h-3 rounded bg-[#ff3860]"></span>
-              <span class="text-[#7a8a9a]">Loss %</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <span class="w-8 h-0.5 bg-[#ff3860]"></span>
-              <span class="text-[#7a8a9a]">5% Threshold</span>
-            </div>
-          </div>
+          <h3 class="font-semibold mb-4 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-[#ff3860]"></span>
+            Packet Loss Trend
+          </h3>
+          <div class="chart-container"><canvas id="packetLossChart"></canvas></div>
         </div>
-
-        <!-- Traffic Distribution -->
+        
         <div class="glass-card p-6">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-[#a78bfa]"></span>
-              Link Utilization Distribution
-            </h3>
-          </div>
-          <p class="text-xs text-[#4a5a6a] mb-4">Shows how traffic is distributed across network links between routers.</p>
-          <div class="chart-container">
-            <canvas id="trafficChart"></canvas>
-          </div>
-          <p class="text-xs text-[#4a5a6a] mt-3">Link A-B typically carries the most traffic</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Use Cases Section -->
-  <section id="use-cases" class="relative px-4">
-    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(0,212,170,0.02)] to-transparent pointer-events-none"></div>
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">APPLICATIONS</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Where This System Can Be Used</h2>
-        <p class="section-desc">Dijkstra-based path optimization applies to various network environments</p>
-      </div>
-
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal">
-        <div class="glass-card p-6 group">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-            </svg>
-          </div>
-          <h4 class="font-semibold mb-2">Smart Campuses</h4>
-          <p class="text-[#7a8a9a] text-sm mb-3">Universities with thousands of students requiring dynamic path optimization during peak hours.</p>
-          <ul class="text-xs text-[#4a5a6a] space-y-1">
-            <li>Lecture hall connectivity</li>
-            <li>Library Wi-Fi management</li>
-            <li>Dormitory networks</li>
-          </ul>
-        </div>
-
-        <div class="glass-card p-6 group">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
-            </svg>
-          </div>
-          <h4 class="font-semibold mb-2">Data Centers</h4>
-          <p class="text-[#7a8a9a] text-sm mb-3">High-performance facilities requiring optimal routing between servers and storage.</p>
-          <ul class="text-xs text-[#4a5a6a] space-y-1">
-            <li>Inter-server communication</li>
-            <li>Load distribution</li>
-            <li>Backup traffic routing</li>
-          </ul>
-        </div>
-
-        <div class="glass-card p-6 group">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ffd93d] to-[#ff8f65] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-            </svg>
-          </div>
-          <h4 class="font-semibold mb-2">Corporate Networks</h4>
-          <p class="text-[#7a8a9a] text-sm mb-3">Enterprises with critical applications requiring reliable path selection.</p>
-          <ul class="text-xs text-[#4a5a6a] space-y-1">
-            <li>Video conference routing</li>
-            <li>VoIP traffic optimization</li>
-            <li>Branch office connectivity</li>
-          </ul>
-        </div>
-
-        <div class="glass-card p-6 group">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
-            </svg>
-          </div>
-          <h4 class="font-semibold mb-2">Cloud Infrastructure</h4>
-          <p class="text-[#7a8a9a] text-sm mb-3">Cloud providers managing distributed services across multiple data centers.</p>
-          <ul class="text-xs text-[#4a5a6a] space-y-1">
-            <li>Multi-region routing</li>
-            <li>CDN path optimization</li>
-            <li>Traffic engineering</li>
-          </ul>
+          <h3 class="font-semibold mb-4 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-[#a78bfa]"></span>
+            Link Utilization
+          </h3>
+          <div class="chart-container"><canvas id="trafficChart"></canvas></div>
         </div>
       </div>
     </div>
@@ -1210,929 +558,623 @@
   <!-- Results Section -->
   <section id="results" class="relative px-4">
     <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">PERFORMANCE METRICS</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">System Benefits and Results</h2>
-        <p class="section-desc">Measured improvements after implementing Dijkstra-based path optimization</p>
+      <div class="text-center mb-8 reveal">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">BENCHMARK</span>
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">System Performance</h2>
+        <p class="section-desc">Measured improvements using Dijkstra-based path optimization</p>
       </div>
 
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 reveal">
-        <div class="glass-card p-6 text-center group">
-          <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-            </svg>
-          </div>
-          <div class="text-3xl font-bold text-[#00d4aa] font-mono mb-1">67%</div>
-          <div class="text-sm text-[#e8f0f5] font-medium mb-1">Reduced Packet Loss</div>
-          <div class="text-xs text-[#4a5a6a]">From 4.8% to 1.6%</div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 reveal">
+        <div class="glass-card p-5 text-center">
+          <div class="text-2xl font-bold text-[#00d4aa] font-mono">67%</div>
+          <div class="text-xs text-[#e8f0f5] font-medium mt-1">Reduced Packet Loss</div>
         </div>
-        <div class="glass-card p-6 text-center group">
-          <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#ffd93d] to-[#ff8f65] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <div class="text-3xl font-bold text-[#ffd93d] font-mono mb-1">45%</div>
-          <div class="text-sm text-[#e8f0f5] font-medium mb-1">Lower Network Delay</div>
-          <div class="text-xs text-[#4a5a6a]">From 78ms to 43ms</div>
+        <div class="glass-card p-5 text-center">
+          <div class="text-2xl font-bold text-[#ffd93d] font-mono">45%</div>
+          <div class="text-xs text-[#e8f0f5] font-medium mt-1">Lower Latency</div>
         </div>
-        <div class="glass-card p-6 text-center group">
-          <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-          </div>
-          <div class="text-3xl font-bold text-[#38bdf8] font-mono mb-1">47%</div>
-          <div class="text-sm text-[#e8f0f5] font-medium mb-1">Better Bandwidth Use</div>
-          <div class="text-xs text-[#4a5a6a]">From 58% to 85% efficiency</div>
+        <div class="glass-card p-5 text-center">
+          <div class="text-2xl font-bold text-[#38bdf8] font-mono">47%</div>
+          <div class="text-xs text-[#e8f0f5] font-medium mt-1">Better Throughput</div>
         </div>
-        <div class="glass-card p-6 text-center group">
-          <div class="w-14 h-14 mx-auto rounded-xl bg-gradient-to-br from-[#a78bfa] to-[#8b5cf6] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-            </svg>
-          </div>
-          <div class="text-3xl font-bold text-[#a78bfa] font-mono mb-1">89%</div>
-          <div class="text-sm text-[#e8f0f5] font-medium mb-1">Faster Path Selection</div>
-          <div class="text-xs text-[#4a5a6a]">Optimal route in milliseconds</div>
+        <div class="glass-card p-5 text-center">
+          <div class="text-2xl font-bold text-[#a78bfa] font-mono">89%</div>
+          <div class="text-xs text-[#e8f0f5] font-medium mt-1">Path Accuracy</div>
         </div>
-      </div>
-
-      <div class="glass-card p-8 reveal">
-        <h3 class="text-lg font-semibold mb-2">Performance Comparison: Before vs After Implementation</h3>
-        <p class="text-sm text-[#7a8a9a] mb-6">Results from deploying Dijkstra-based path optimization on a campus network with 5,000+ users</p>
-        
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-[rgba(0,212,170,0.15)]">
-                <th class="text-left py-4 px-4 text-[#7a8a9a] font-medium">Metric</th>
-                <th class="text-center py-4 px-4 text-[#ff3860] font-medium">Before</th>
-                <th class="text-center py-4 px-4 text-[#00d4aa] font-medium">After</th>
-                <th class="text-center py-4 px-4 text-[#7a8a9a] font-medium">Improvement</th>
-                <th class="text-left py-4 px-4 text-[#4a5a6a] font-medium text-xs">Impact</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="border-b border-[rgba(0,212,170,0.08)] hover:bg-[rgba(0,212,170,0.03)] transition-colors">
-                <td class="py-4 px-4 font-medium">Average Packet Loss</td>
-                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">4.8%</td>
-                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">1.6%</td>
-                <td class="text-center py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-medium bg-[rgba(0,212,170,0.15)] text-[#00d4aa]">+67%</span></td>
-                <td class="py-4 px-4 text-xs text-[#4a5a6a]">Fewer dropped connections</td>
-              </tr>
-              <tr class="border-b border-[rgba(0,212,170,0.08)] hover:bg-[rgba(0,212,170,0.03)] transition-colors">
-                <td class="py-4 px-4 font-medium">Average Network Delay</td>
-                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">78ms</td>
-                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">43ms</td>
-                <td class="text-center py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-medium bg-[rgba(0,212,170,0.15)] text-[#00d4aa]">+45%</span></td>
-                <td class="py-4 px-4 text-xs text-[#4a5a6a]">Better video call quality</td>
-              </tr>
-              <tr class="border-b border-[rgba(0,212,170,0.08)] hover:bg-[rgba(0,212,170,0.03)] transition-colors">
-                <td class="py-4 px-4 font-medium">Bandwidth Efficiency</td>
-                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">58%</td>
-                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">85%</td>
-                <td class="text-center py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-medium bg-[rgba(0,212,170,0.15)] text-[#00d4aa]">+47%</span></td>
-                <td class="py-4 px-4 text-xs text-[#4a5a6a]">More users supported</td>
-              </tr>
-              <tr class="border-b border-[rgba(0,212,170,0.08)] hover:bg-[rgba(0,212,170,0.03)] transition-colors">
-                <td class="py-4 px-4 font-medium">Routing Method</td>
-                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">Static</td>
-                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">Dynamic</td>
-                <td class="text-center py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-medium bg-[rgba(167,139,250,0.15)] text-[#a78bfa]">Dijkstra</span></td>
-                <td class="py-4 px-4 text-xs text-[#4a5a6a]">Adaptive path selection</td>
-              </tr>
-              <tr class="hover:bg-[rgba(0,212,170,0.03)] transition-colors">
-                <td class="py-4 px-4 font-medium">User Complaints</td>
-                <td class="text-center py-4 px-4 font-mono text-[#ff3860]">23/week</td>
-                <td class="text-center py-4 px-4 font-mono text-[#00d4aa]">4/week</td>
-                <td class="text-center py-4 px-4"><span class="px-3 py-1 rounded-full text-xs font-medium bg-[rgba(0,212,170,0.15)] text-[#00d4aa]">+83%</span></td>
-                <td class="py-4 px-4 text-xs text-[#4a5a6a]">Higher satisfaction</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Conclusion Section -->
-  <section id="conclusion" class="relative px-4">
-    <div class="absolute inset-0 bg-gradient-to-b from-[rgba(0,212,170,0.02)] to-transparent pointer-events-none"></div>
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-12 reveal">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-mono text-[#00d4aa] bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.2)] mb-4">CONCLUSION</span>
-        <h2 class="text-3xl sm:text-4xl font-bold mb-4">Why Dijkstra Algorithm Matters</h2>
-        <p class="section-desc">Key benefits of using shortest path algorithm for network optimization</p>
-      </div>
-
-      <div class="grid lg:grid-cols-2 gap-8 reveal">
-        <div class="glass-card p-8">
-          <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
-            <svg class="w-6 h-6 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Key Takeaways
-          </h3>
-          <div class="space-y-4">
-            <div class="flex gap-4">
-              <div class="step-number">1</div>
-              <div>
-                <h4 class="font-medium mb-1">Dynamic Path Selection</h4>
-                <p class="text-sm text-[#7a8a9a]">Unlike static routing, Dijkstra's algorithm dynamically calculates optimal paths based on current network conditions.</p>
-              </div>
-            </div>
-            <div class="flex gap-4">
-              <div class="step-number">2</div>
-              <div>
-                <h4 class="font-medium mb-1">Weighted Decision Making</h4>
-                <p class="text-sm text-[#7a8a9a]">Link weights based on bandwidth, delay, and packet loss enable intelligent routing decisions that prioritize network health.</p>
-              </div>
-            </div>
-            <div class="flex gap-4">
-              <div class="step-number">3</div>
-              <div>
-                <h4 class="font-medium mb-1">Guaranteed Optimal Solution</h4>
-                <p class="text-sm text-[#7a8a9a]">Dijkstra's algorithm guarantees finding the shortest path, ensuring traffic always takes the most efficient route.</p>
-              </div>
-            </div>
-            <div class="flex gap-4">
-              <div class="step-number">4</div>
-              <div>
-                <h4 class="font-medium mb-1">Scalable Solution</h4>
-                <p class="text-sm text-[#7a8a9a]">The algorithm scales well with network growth, making it suitable for expanding campus and enterprise networks.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="glass-card p-8">
-          <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
-            <svg class="w-6 h-6 text-[#00d4aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-            Algorithm Benefits
-          </h3>
-          <div class="space-y-4">
-            <div class="p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.1)]">
-              <h4 class="font-medium text-[#00d4aa] mb-1">Reduced Latency</h4>
-              <p class="text-sm text-[#7a8a9a]">By always selecting the shortest weighted path, traffic experiences minimal delay even during congestion.</p>
-            </div>
-            <div class="p-4 rounded-xl bg-[rgba(56,189,248,0.05)] border border-[rgba(56,189,248,0.1)]">
-              <h4 class="font-medium text-[#38bdf8] mb-1">Load Balancing</h4>
-              <p class="text-sm text-[#7a8a9a]">Traffic naturally distributes across multiple paths as link weights adjust based on congestion levels.</p>
-            </div>
-            <div class="p-4 rounded-xl bg-[rgba(167,139,250,0.05)] border border-[rgba(167,139,250,0.1)]">
-              <h4 class="font-medium text-[#a78bfa] mb-1">Fault Tolerance</h4>
-              <p class="text-sm text-[#7a8a9a]">When links fail or become congested, the algorithm automatically finds alternate optimal paths.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="glass-card p-8 mt-8 text-center reveal">
-        <p class="text-lg text-[#e8f0f5] max-w-3xl mx-auto leading-relaxed">
-          This project demonstrates that <span class="text-[#00d4aa] font-semibold">Dijkstra's algorithm effectively optimizes network routing</span> during congestion. By calculating link weights from bandwidth, delay, and packet loss, the system ensures traffic follows the most efficient path, reducing congestion impact on users.
-        </p>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer class="relative py-12 px-4 border-t border-[rgba(0,212,170,0.1)]">
+  <footer class="relative py-8 px-4 border-t border-[rgba(0,212,170,0.1)]">
     <div class="max-w-7xl mx-auto">
-      <div class="glass-card p-8 reveal">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
-              <svg class="w-6 h-6 text-[#050a12]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
-              </svg>
+      <div class="glass-card p-6 reveal">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center">
+              <svg class="w-5 h-5 text-[#050a12]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
             </div>
             <div>
-              <div class="font-semibold text-lg">Dijkstra Algorithm Based Network Congestion Detection</div>
-              <div class="text-sm text-[#7a8a9a]">Smart Campus Networks Project</div>
+              <div class="font-semibold">Dijkstra Path Optimization</div>
+              <div class="text-xs text-[#7a8a9a]">Smart Campus Network Simulation</div>
             </div>
           </div>
-          <div class="text-center md:text-right">
+          <div class="text-center md:text-right text-sm text-[#7a8a9a]">
             <div class="font-semibold text-[#00d4aa]">Mohamad Asihf</div>
-            <div class="text-sm text-[#7a8a9a]">Registration No: 24MIS0005</div>
-            <div class="text-sm text-[#7a8a9a]">Course: Computer Networks</div>
-            <div class="text-sm text-[#7a8a9a]">VIT University</div>
+            <div>24MIS0005 - Computer Networks</div>
           </div>
-        </div>
-        <div class="mt-6 pt-6 border-t border-[rgba(0,212,170,0.1)] text-center text-xs text-[#4a5a6a]">
-          Dijkstra Algorithm Based Network Path Optimization Dashboard - A demonstration project for Computer Networks course
         </div>
       </div>
     </div>
   </footer>
 
   <script>
-    // ========== NETWORK CANVAS ANIMATION ==========
-    const canvas = document.getElementById('networkCanvas');
-    const ctx = canvas.getContext('2d');
-    let nodes = [];
-    let animationId = null;
-    let mouseX = 0;
-    let mouseY = 0;
+    // ========== BACKGROUND PARTICLES ==========
+    const bgCanvas = document.getElementById('networkCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let particles = [];
     
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      initNodes();
-    }
-
-    function initNodes() {
-      nodes = [];
-      const nodeCount = Math.floor((canvas.width * canvas.height) / 25000);
-      const safeCount = Math.max(20, Math.min(nodeCount, 100));
-      
-      for (let i = 0; i < safeCount; i++) {
-        nodes.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          radius: Math.random() * 2 + 1,
-          opacity: Math.random() * 0.5 + 0.2
+    function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; initParticles(); }
+    function initParticles() {
+      particles = [];
+      const count = Math.min(60, Math.floor((bgCanvas.width * bgCanvas.height) / 30000));
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * bgCanvas.width,
+          y: Math.random() * bgCanvas.height,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          r: Math.random() * 1.5 + 0.5,
+          a: Math.random() * 0.3 + 0.1
         });
       }
     }
-
-    function drawNetwork() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < 150) {
-            const opacity = Math.max(0, (1 - distance / 150) * 0.15);
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = 'rgba(0, 212, 170, ' + opacity + ')';
-            ctx.lineWidth = 1;
-            ctx.stroke();
+    function drawBg() {
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const d = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+          if (d < 120) {
+            bgCtx.beginPath();
+            bgCtx.moveTo(particles[i].x, particles[i].y);
+            bgCtx.lineTo(particles[j].x, particles[j].y);
+            bgCtx.strokeStyle = `rgba(0, 212, 170, ${(1 - d / 120) * 0.08})`;
+            bgCtx.stroke();
           }
         }
       }
-      
-      for (const node of nodes) {
-        ctx.beginPath();
-        const safeRadius = Math.max(0.5, node.radius);
-        ctx.arc(node.x, node.y, safeRadius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0, 212, 170, ' + node.opacity + ')';
-        ctx.fill();
-        
-        const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, Math.max(1, safeRadius * 4));
-        gradient.addColorStop(0, 'rgba(0, 212, 170, ' + (node.opacity * 0.3) + ')');
-        gradient.addColorStop(1, 'rgba(0, 212, 170, 0)');
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, Math.max(1, safeRadius * 4), 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
+      for (const p of particles) {
+        bgCtx.beginPath();
+        bgCtx.arc(p.x, p.y, Math.max(0.5, p.r), 0, Math.PI * 2);
+        bgCtx.fillStyle = `rgba(0, 212, 170, ${p.a})`;
+        bgCtx.fill();
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = bgCanvas.width;
+        if (p.x > bgCanvas.width) p.x = 0;
+        if (p.y < 0) p.y = bgCanvas.height;
+        if (p.y > bgCanvas.height) p.y = 0;
       }
-      
-      for (const node of nodes) {
-        const dx = mouseX - node.x;
-        const dy = mouseY - node.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < 200 && distance > 0) {
-          const force = (200 - distance) / 200;
-          node.vx += (dx / distance) * force * 0.02;
-          node.vy += (dy / distance) * force * 0.02;
-        }
-        
-        node.x += node.vx;
-        node.y += node.vy;
-        node.vx *= 0.99;
-        node.vy *= 0.99;
-        
-        if (node.x < 0) node.x = canvas.width;
-        if (node.x > canvas.width) node.x = 0;
-        if (node.y < 0) node.y = canvas.height;
-        if (node.y > canvas.height) node.y = 0;
-      }
-      
-      animationId = requestAnimationFrame(drawNetwork);
+      requestAnimationFrame(drawBg);
     }
-
-    resizeCanvas();
-    drawNetwork();
-
-    window.addEventListener('resize', resizeCanvas);
-    document.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    });
+    resizeBg(); drawBg();
+    window.addEventListener('resize', resizeBg);
 
     // ========== MOBILE MENU ==========
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
+    if (mobileBtn) mobileBtn.onclick = () => mobileMenu.classList.toggle('hidden');
 
-    if (mobileMenuBtn && mobileMenu) {
-      mobileMenuBtn.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
-      });
+    // ========== REVEAL ==========
+    const reveals = document.querySelectorAll('.reveal');
+    const revealObs = new IntersectionObserver(e => e.forEach(el => el.isIntersecting && el.target.classList.add('active')), { threshold: 0.1 });
+    reveals.forEach(el => revealObs.observe(el));
 
-      mobileMenu.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => {
-          mobileMenu.classList.add('hidden');
-        });
-      });
-    }
-
-    // ========== SCROLL REVEAL ==========
-    const revealElements = document.querySelectorAll('.reveal');
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('active');
-        }
-      });
-    }, { threshold: 0.1 });
-
-    revealElements.forEach(el => revealObserver.observe(el));
-
-    // ========== COUNTER ANIMATION ==========
+    // ========== COUNTER ==========
     function animateCounters() {
-      const counters = document.querySelectorAll('.counter');
-      counters.forEach(counter => {
-        const target = parseFloat(counter.dataset.target);
-        const duration = 2000;
+      document.querySelectorAll('.counter').forEach(c => {
+        const t = parseFloat(c.dataset.target);
+        const dur = 2000;
         const start = performance.now();
-        
-        function update(currentTime) {
-          const elapsed = currentTime - start;
-          const progress = Math.min(elapsed / duration, 1);
-          const easeOut = 1 - Math.pow(1 - progress, 3);
-          const current = target * easeOut;
-          
-          if (target % 1 !== 0) {
-            counter.textContent = current.toFixed(1);
-          } else {
-            counter.textContent = Math.floor(current);
-          }
-          
-          if (progress < 1) {
-            requestAnimationFrame(update);
-          }
-        }
-        
-        requestAnimationFrame(update);
+        const upd = now => {
+          const prog = Math.min((now - start) / dur, 1);
+          const ease = 1 - Math.pow(1 - prog, 3);
+          c.textContent = t % 1 ? (t * ease).toFixed(1) : Math.floor(t * ease);
+          if (prog < 1) requestAnimationFrame(upd);
+        };
+        requestAnimationFrame(upd);
+      });
+    }
+    const homeSec = document.getElementById('home');
+    const homeObs = new IntersectionObserver(e => { if (e[0].isIntersecting) { animateCounters(); homeObs.disconnect(); } }, { threshold: 0.5 });
+    if (homeSec) homeObs.observe(homeSec);
+
+    // ========== TOPOLOGY CANVAS ==========
+    const topoCanvas = document.getElementById('topologyCanvas');
+    const topoCtx = topoCanvas.getContext('2d');
+    
+    // Campus Network Topology
+    const routers = [
+      { id: 'A', name: 'Admin Block', x: 120, y: 200, color: '#00d4aa' },
+      { id: 'B', name: 'Library', x: 280, y: 80, color: '#38bdf8' },
+      { id: 'C', name: 'Hostel', x: 280, y: 320, color: '#ffd93d' },
+      { id: 'D', name: 'Academic', x: 480, y: 140, color: '#a78bfa' },
+      { id: 'E', name: 'Laboratory', x: 600, y: 260, color: '#ff6b35' }
+    ];
+
+    // Links: [from, to, baseWeight]
+    const links = [
+      { from: 'A', to: 'B', weight: 5 },
+      { from: 'A', to: 'C', weight: 4 },
+      { from: 'B', to: 'D', weight: 3 },
+      { from: 'B', to: 'C', weight: 6 },
+      { from: 'C', to: 'E', weight: 5 },
+      { from: 'D', to: 'E', weight: 2 }
+    ];
+
+    let currentPath = ['A', 'B', 'E'];
+    let congestedLinks = [];
+    let packets = [];
+    let isCongestion = false;
+    let inputParams = { bandwidth: 50, delay: 30, packetLoss: 1.0 };
+
+    function getRouter(id) { return routers.find(r => r.id === id); }
+    function getLink(a, b) {
+      return links.find(l => (l.from === a && l.to === b) || (l.from === b && l.to === a));
+    }
+
+    function updateLinkWeights() {
+      const bw = inputParams.bandwidth;
+      const dly = inputParams.delay;
+      const loss = inputParams.packetLoss;
+      
+      links.forEach(l => {
+        let w = l.weight;
+        w += bw / 15;
+        w += dly / 20;
+        w += loss * 2;
+        l.currentWeight = Math.round(w);
       });
     }
 
-    const homeSection = document.getElementById('home');
-    const homeObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          animateCounters();
-          homeObserver.disconnect();
-        }
-      });
-    }, { threshold: 0.5 });
-
-    if (homeSection) {
-      homeObserver.observe(homeSection);
+    // Dijkstra
+    function dijkstra(start, end) {
+      const dist = {}, prev = {}, unvisited = new Set(routers.map(r => r.id));
+      routers.forEach(r => dist[r.id] = Infinity);
+      dist[start] = 0;
+      
+      while (unvisited.size) {
+        let u = null, min = Infinity;
+        unvisited.forEach(id => { if (dist[id] < min) { min = dist[id]; u = id; } });
+        if (u === null || u === end) break;
+        unvisited.delete(u);
+        
+        links.filter(l => l.from === u || l.to === u).forEach(l => {
+          const v = l.from === u ? l.to : l.from;
+          const alt = dist[u] + (l.currentWeight || l.weight);
+          if (alt < dist[v]) { dist[v] = alt; prev[v] = u; }
+        });
+      }
+      
+      const path = [];
+      let cur = end;
+      while (cur) { path.unshift(cur); cur = prev[cur]; }
+      return { path, cost: dist[end] };
     }
+
+    function findCongestedLinks() {
+      congestedLinks = [];
+      if (isCongestion) {
+        const bw = inputParams.bandwidth;
+        if (bw > 80) congestedLinks.push(['A', 'B']);
+        if (bw > 90) congestedLinks.push(['B', 'D']);
+      }
+    }
+
+    function spawnPacket() {
+      if (currentPath.length < 2) return;
+      packets.push({
+        path: [...currentPath],
+        index: 0,
+        progress: 0,
+        speed: 0.015
+      });
+    }
+
+    function drawTopology() {
+      topoCtx.clearRect(0, 0, topoCanvas.width, topoCanvas.height);
+      
+      // Draw links
+      links.forEach(l => {
+        const r1 = getRouter(l.from);
+        const r2 = getRouter(l.to);
+        if (!r1 || !r2) return;
+        
+        const isCongested = congestedLinks.some(c => 
+          (c[0] === l.from && c[1] === l.to) || (c[0] === l.to && c[1] === l.from)
+        );
+        const onPath = currentPath.length > 1 && 
+          currentPath.some((id, i) => i < currentPath.length - 1 && 
+            ((currentPath[i] === l.from && currentPath[i+1] === l.to) || 
+             (currentPath[i] === l.to && currentPath[i+1] === l.from)));
+        
+        topoCtx.beginPath();
+        topoCtx.moveTo(r1.x, r1.y);
+        topoCtx.lineTo(r2.x, r2.y);
+        
+        if (isCongested) {
+          topoCtx.strokeStyle = '#ff3860';
+          topoCtx.lineWidth = 4;
+          topoCtx.shadowColor = '#ff3860';
+          topoCtx.shadowBlur = 15;
+        } else if (onPath) {
+          topoCtx.strokeStyle = '#38bdf8';
+          topoCtx.lineWidth = 3;
+          topoCtx.shadowColor = '#38bdf8';
+          topoCtx.shadowBlur = 12;
+        } else {
+          topoCtx.strokeStyle = 'rgba(0, 212, 170, 0.4)';
+          topoCtx.lineWidth = 2;
+          topoCtx.shadowBlur = 0;
+        }
+        topoCtx.stroke();
+        topoCtx.shadowBlur = 0;
+        
+        // Weight label
+        const mx = (r1.x + r2.x) / 2;
+        const my = (r1.y + r2.y) / 2;
+        topoCtx.font = '10px JetBrains Mono';
+        topoCtx.fillStyle = '#7a8a9a';
+        topoCtx.fillText(l.currentWeight || l.weight, mx - 6, my - 6);
+      });
+      
+      // Draw routers
+      routers.forEach(r => {
+        topoCtx.beginPath();
+        topoCtx.arc(r.x, r.y, 28, 0, Math.PI * 2);
+        topoCtx.fillStyle = 'rgba(12, 18, 32, 0.9)';
+        topoCtx.fill();
+        topoCtx.strokeStyle = r.color;
+        topoCtx.lineWidth = 3;
+        topoCtx.stroke();
+        
+        topoCtx.shadowColor = r.color;
+        topoCtx.shadowBlur = 15;
+        topoCtx.stroke();
+        topoCtx.shadowBlur = 0;
+        
+        topoCtx.fillStyle = '#fff';
+        topoCtx.font = 'bold 16px JetBrains Mono';
+        topoCtx.textAlign = 'center';
+        topoCtx.fillText(r.id, r.x, r.y + 5);
+        
+        topoCtx.font = '10px Space Grotesk';
+        topoCtx.fillStyle = '#7a8a9a';
+        topoCtx.fillText(r.name, r.x, r.y + 48);
+      });
+      
+      // Draw packets
+      packets.forEach((p, i) => {
+        if (p.index >= p.path.length - 1) {
+          packets.splice(i, 1);
+          return;
+        }
+        
+        const r1 = getRouter(p.path[p.index]);
+        const r2 = getRouter(p.path[p.index + 1]);
+        if (!r1 || !r2) return;
+        
+        p.progress += p.speed;
+        if (p.progress >= 1) {
+          p.progress = 0;
+          p.index++;
+        }
+        
+        const x = r1.x + (r2.x - r1.x) * p.progress;
+        const y = r1.y + (r2.y - r1.y) * p.progress;
+        
+        topoCtx.beginPath();
+        topoCtx.arc(x, y, 6, 0, Math.PI * 2);
+        topoCtx.fillStyle = '#ffd93d';
+        topoCtx.shadowColor = '#ffd93d';
+        topoCtx.shadowBlur = 12;
+        topoCtx.fill();
+        topoCtx.shadowBlur = 0;
+      });
+      
+      requestAnimationFrame(drawTopology);
+    }
+
+    // Spawn packets periodically
+    setInterval(() => {
+      if (packets.length < 4) spawnPacket();
+    }, 600);
+
+    updateLinkWeights();
+    drawTopology();
 
     // ========== CHARTS ==========
     Chart.defaults.color = '#7a8a9a';
     Chart.defaults.borderColor = 'rgba(0, 212, 170, 0.1)';
     Chart.defaults.font.family = "'Space Grotesk', sans-serif";
 
-    const labels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
-    let bandwidthData = [45, 52, 68, 85, 72, 58, 65];
-    let delayData = [25, 30, 45, 65, 55, 35, 40];
-    let packetLossData = [0.5, 0.8, 1.5, 3.2, 2.1, 1.2, 1.8];
-    let trafficData = [35, 25, 20, 15, 5];
+    const routerLabels = routers.map(r => r.name.split(' ')[0]);
+    
+    const bwCtx = document.getElementById('bandwidthChart');
+    let bwChart = new Chart(bwCtx, {
+      type: 'bar',
+      data: {
+        labels: routerLabels,
+        datasets: [{
+          label: 'Bandwidth %',
+          data: [40, 55, 35, 50, 30],
+          backgroundColor: ['rgba(0,212,170,0.7)', 'rgba(56,189,248,0.7)', 'rgba(255,217,61,0.7)', 'rgba(167,139,250,0.7)', 'rgba(255,107,53,0.7)'],
+          borderColor: ['#00d4aa', '#38bdf8', '#ffd93d', '#a78bfa', '#ff6b35'],
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } } }
+    });
 
-    const bandwidthCtx = document.getElementById('bandwidthChart');
-    let bandwidthChart = null;
-    if (bandwidthCtx) {
-      bandwidthChart = new Chart(bandwidthCtx.getContext('2d'), {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Bandwidth Usage %',
-            data: bandwidthData,
-            borderColor: '#00d4aa',
-            backgroundColor: 'rgba(0, 212, 170, 0.1)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#00d4aa',
-            pointBorderColor: '#050a12',
-            pointBorderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0, 212, 170, 0.05)' }, ticks: { callback: function(value) { return value + '%'; } } },
-            x: { grid: { display: false } }
-          },
-          interaction: { intersect: false, mode: 'index' }
-        }
-      });
-    }
+    const dlCtx = document.getElementById('delayChart');
+    let dlChart = new Chart(dlCtx, {
+      type: 'bar',
+      data: {
+        labels: links.map(l => `${l.from}-${l.to}`),
+        datasets: [{
+          label: 'Delay ms',
+          data: links.map(l => l.weight * 3 + 15),
+          backgroundColor: 'rgba(255, 217, 61, 0.6)',
+          borderColor: '#ffd93d',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => v + 'ms' } } } }
+    });
 
-    const delayCtx = document.getElementById('delayChart');
-    let delayChart = null;
-    if (delayCtx) {
-      delayChart = new Chart(delayCtx.getContext('2d'), {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Network Delay (ms)',
-            data: delayData,
-            borderColor: '#ffd93d',
-            backgroundColor: 'rgba(255, 217, 61, 0.1)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffd93d',
-            pointBorderColor: '#050a12',
-            pointBorderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 217, 61, 0.05)' }, ticks: { callback: function(value) { return value + 'ms'; } } },
-            x: { grid: { display: false } }
-          },
-          interaction: { intersect: false, mode: 'index' }
-        }
-      });
-    }
+    const plCtx = document.getElementById('packetLossChart');
+    let plChart = new Chart(plCtx, {
+      type: 'line',
+      data: {
+        labels: ['10s', '20s', '30s', '40s', '50s', '60s'],
+        datasets: [{
+          label: 'Packet Loss %',
+          data: [0.8, 1.0, 1.2, 0.9, 1.1, 1.0],
+          borderColor: '#ff3860',
+          backgroundColor: 'rgba(255, 56, 96, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 5, ticks: { callback: v => v + '%' } } } }
+    });
 
-    const packetLossCtx = document.getElementById('packetLossChart');
-    let packetLossChart = null;
-    if (packetLossCtx) {
-      packetLossChart = new Chart(packetLossCtx.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Packet Loss %',
-            data: packetLossData,
-            backgroundColor: 'rgba(255, 56, 96, 0.6)',
-            borderColor: '#ff3860',
-            borderWidth: 1,
-            borderRadius: 4,
-            hoverBackgroundColor: '#ff3860'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, max: 5, grid: { color: 'rgba(255, 56, 96, 0.05)' }, ticks: { callback: function(value) { return value + '%'; } } },
-            x: { grid: { display: false } }
-          }
-        }
-      });
-    }
+    const tfCtx = document.getElementById('trafficChart');
+    let tfChart = new Chart(tfCtx, {
+      type: 'doughnut',
+      data: {
+        labels: routerLabels,
+        datasets: [{
+          data: [25, 20, 15, 25, 15],
+          backgroundColor: ['#00d4aa', '#38bdf8', '#ffd93d', '#a78bfa', '#ff6b35'],
+          borderColor: '#050a12',
+          borderWidth: 2
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { usePointStyle: true, padding: 10 } } }, cutout: '55%' }
+    });
 
-    const trafficCtx = document.getElementById('trafficChart');
-    let trafficChart = null;
-    if (trafficCtx) {
-      trafficChart = new Chart(trafficCtx.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-          labels: ['Link A-B', 'Link A-C', 'Link B-C', 'Link B-D', 'Link C-D'],
-          datasets: [{
-            data: trafficData,
-            backgroundColor: ['#00d4aa', '#38bdf8', '#a78bfa', '#ffd93d', '#ff6b35'],
-            borderColor: '#050a12',
-            borderWidth: 3,
-            hoverOffset: 10
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { usePointStyle: true, padding: 15, font: { size: 11 } } } },
-          cutout: '60%'
-        }
-      });
-    }
-
-    // ========== INPUT BARS ==========
-    const bandwidthInput = document.getElementById('bandwidth');
-    const delayInput = document.getElementById('delay');
-    const packetLossInput = document.getElementById('packetLoss');
-    const bandwidthBar = document.getElementById('bandwidthBar');
-    const delayBar = document.getElementById('delayBar');
-    const packetBar = document.getElementById('packetBar');
+    // ========== INPUT HANDLING ==========
+    const bwInput = document.getElementById('bandwidth');
+    const dlInput = document.getElementById('delay');
+    const plInput = document.getElementById('packetLoss');
+    const bwBar = document.getElementById('bandwidthBar');
+    const dlBar = document.getElementById('delayBar');
+    const plBar = document.getElementById('packetBar');
 
     function updateInputBars() {
-      if (bandwidthInput && bandwidthBar) {
-        const bwVal = Math.min(100, Math.max(0, parseFloat(bandwidthInput.value) || 0));
-        bandwidthBar.style.width = bwVal + '%';
-      }
-      if (delayInput && delayBar) {
-        const delayVal = Math.min(200, Math.max(0, parseFloat(delayInput.value) || 0));
-        delayBar.style.width = (delayVal / 200 * 100) + '%';
-      }
-      if (packetLossInput && packetBar) {
-        const lossVal = Math.min(10, Math.max(0, parseFloat(packetLossInput.value) || 0));
-        packetBar.style.width = (lossVal / 10 * 100) + '%';
-      }
+      if (bwBar) bwBar.style.width = Math.min(100, Math.max(0, bwInput.value)) + '%';
+      if (dlBar) dlBar.style.width = Math.min(100, Math.max(0, dlInput.value / 2)) + '%';
+      if (plBar) plBar.style.width = Math.min(100, Math.max(0, plInput.value * 10)) + '%';
     }
+    bwInput.oninput = dlInput.oninput = plInput.oninput = updateInputBars;
 
-    if (bandwidthInput) bandwidthInput.addEventListener('input', updateInputBars);
-    if (delayInput) delayInput.addEventListener('input', updateInputBars);
-    if (packetLossInput) packetLossInput.addEventListener('input', updateInputBars);
-
-    // ========== DIJKSTRA ALGORITHM ==========
-    class Graph {
-      constructor() {
-        this.nodes = ['A', 'B', 'C', 'D'];
-        this.edges = {
-          'A': { 'B': 5, 'C': 10 },
-          'B': { 'A': 5, 'C': 3, 'D': 8 },
-          'C': { 'A': 10, 'B': 3, 'D': 4 },
-          'D': { 'B': 8, 'C': 4 }
-        };
-      }
-
-      calculateWeight(bandwidth, delay, packetLoss) {
-        const baseWeight = 5;
-        const bandwidthFactor = Math.pow(bandwidth / 50, 2);
-        const delayFactor = delay / 30;
-        const lossFactor = packetLoss * 5;
-        return Math.round(baseWeight + bandwidthFactor + delayFactor + lossFactor);
-      }
-
-      updateWeights(bandwidth, delay, packetLoss) {
-        const congestionFactor = this.calculateWeight(bandwidth, delay, packetLoss);
+    // ========== FORM SUBMISSION ==========
+    document.getElementById('parameterForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const bw = Math.min(100, Math.max(0, parseFloat(bwInput.value) || 0));
+      const dl = Math.min(200, Math.max(0, parseFloat(dlInput.value) || 0));
+      const pl = Math.min(10, Math.max(0, parseFloat(plInput.value) || 0));
+      
+      inputParams = { bandwidth: bw, delay: dl, packetLoss: pl };
+      
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('resultState').classList.add('hidden');
+      
+      setTimeout(() => {
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('resultState').classList.remove('hidden');
         
-        // Simulate congestion on primary path (A-B)
-        if (bandwidth > 80 || delay > 60 || packetLoss > 5) {
-          this.edges['A']['B'] = 50 + congestionFactor;
-          this.edges['B']['A'] = 50 + congestionFactor;
+        // Update result
+        document.getElementById('resultBandwidth').textContent = bw + '%';
+        document.getElementById('resultDelay').textContent = dl + 'ms';
+        document.getElementById('resultLoss').textContent = pl.toFixed(1) + '%';
+        
+        // Check congestion
+        isCongestion = bw > 80 || dl > 60 || pl > 5;
+        
+        // Calculate risk
+        let risk = 0;
+        risk += (bw / 100) * 35;
+        risk += (dl / 200) * 35;
+        risk += (pl / 10) * 30;
+        risk = Math.min(100, Math.max(0, risk));
+        
+        document.getElementById('riskBar').style.width = risk + '%';
+        document.getElementById('riskPercent').textContent = Math.round(risk) + '%';
+        
+        // Update topology
+        updateLinkWeights();
+        findCongestedLinks();
+        
+        // Run Dijkstra
+        const result = dijkstra('A', 'E');
+        currentPath = result.path;
+        
+        document.getElementById('pathResult').textContent = currentPath.join(' → ');
+        document.getElementById('pathCost').textContent = 'Total Cost: ' + Math.round(result.cost);
+        
+        // Update alerts
+        const alertBox = document.getElementById('alertBox');
+        const alertIcon = document.getElementById('alertIcon');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertSubtitle = document.getElementById('alertSubtitle');
+        const congestionAlert = document.getElementById('congestionAlert');
+        const topologyStatus = document.getElementById('topologyStatus');
+        
+        if (isCongestion) {
+          alertBox.className = 'p-4 rounded-xl border-2 border-[rgba(255,56,96,0.3)] bg-[rgba(255,56,96,0.1)]';
+          alertIcon.innerHTML = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>';
+          alertIcon.className = 'w-10 h-10 rounded-lg bg-gradient-to-br from-[#ff3860] to-[#ff6b35] flex items-center justify-center';
+          alertTitle.textContent = 'Congestion Detected';
+          alertTitle.className = 'font-semibold text-sm text-[#ff3860]';
+          alertSubtitle.textContent = 'Rerouting via optimal path';
+          
+          congestionAlert.classList.remove('hidden');
+          document.getElementById('congestionMsg').textContent = `Link ${congestedLinks[0] ? congestedLinks[0].join('-') : 'A-B'} overloaded. Path updated.`;
+          topologyStatus.textContent = 'Congested';
+          topologyStatus.className = 'text-xs font-mono text-[#ff3860]';
+          
+          playSiren();
         } else {
-          this.edges['A']['B'] = 5 + Math.round(congestionFactor / 5);
-          this.edges['B']['A'] = 5 + Math.round(congestionFactor / 5);
-        }
-        
-        // Other links have normal weights
-        this.edges['A']['C'] = 10 + Math.round(congestionFactor / 10);
-        this.edges['C']['A'] = 10 + Math.round(congestionFactor / 10);
-        this.edges['B']['C'] = 3;
-        this.edges['C']['B'] = 3;
-        this.edges['B']['D'] = 8 + Math.round(congestionFactor / 10);
-        this.edges['D']['B'] = 8 + Math.round(congestionFactor / 10);
-        this.edges['C']['D'] = 4;
-        this.edges['D']['C'] = 4;
-      }
-
-      dijkstra(start, end) {
-        const distances = {};
-        const previous = {};
-        const unvisited = new Set(this.nodes);
-        
-        // Initialize distances
-        for (const node of this.nodes) {
-          distances[node] = Infinity;
-        }
-        distances[start] = 0;
-        
-        while (unvisited.size > 0) {
-          // Find node with minimum distance
-          let current = null;
-          let minDist = Infinity;
-          for (const node of unvisited) {
-            if (distances[node] < minDist) {
-              minDist = distances[node];
-              current = node;
-            }
-          }
+          alertBox.className = 'p-4 rounded-xl border-2 border-[rgba(0,212,170,0.2)] bg-[rgba(0,212,170,0.05)]';
+          alertIcon.innerHTML = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+          alertIcon.className = 'w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center';
+          alertTitle.textContent = 'Network Normal';
+          alertTitle.className = 'font-semibold text-sm text-[#00d4aa]';
+          alertSubtitle.textContent = 'All parameters within limits';
           
-          if (current === null || current === end) break;
-          
-          unvisited.delete(current);
-          
-          // Update distances to neighbors
-          for (const neighbor in this.edges[current]) {
-            const alt = distances[current] + this.edges[current][neighbor];
-            if (alt < distances[neighbor]) {
-              distances[neighbor] = alt;
-              previous[neighbor] = current;
-            }
-          }
+          congestionAlert.classList.add('hidden');
+          topologyStatus.textContent = 'Normal';
+          topologyStatus.className = 'text-xs font-mono text-[#00d4aa]';
         }
         
-        // Reconstruct path
-        const path = [];
-        let current = end;
-        while (current) {
-          path.unshift(current);
-          current = previous[current];
-        }
+        // Update status panel
+        document.getElementById('statusBandwidth').textContent = bw + '%';
+        document.getElementById('statusDelay').textContent = dl + 'ms';
+        document.getElementById('statusLoss').textContent = pl.toFixed(1) + '%';
+        document.getElementById('statusBandwidthBar').style.width = bw + '%';
+        document.getElementById('statusDelayBar').style.width = (dl / 200 * 100) + '%';
+        document.getElementById('statusLossBar').style.width = (pl / 10 * 100) + '%';
         
-        return {
-          path: path,
-          cost: distances[end]
-        };
-      }
-    }
-
-    const graph = new Graph();
-
-    // ========== ALERT HISTORY ==========
-    const alertHistory = [];
-    const maxHistoryItems = 5;
-
-    function addToHistory(bandwidth, delay, packetLoss, result) {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString();
-      
-      alertHistory.unshift({
-        time: timeStr,
-        bandwidth: bandwidth,
-        delay: delay,
-        packetLoss: packetLoss,
-        result: result
-      });
-      
-      if (alertHistory.length > maxHistoryItems) {
-        alertHistory.pop();
-      }
-      
-      renderHistory();
-    }
-
-    function renderHistory() {
-      const historyTable = document.getElementById('historyTable');
-      if (!historyTable) return;
-      
-      if (alertHistory.length === 0) {
-        historyTable.innerHTML = '<tr class="border-b border-[rgba(0,212,170,0.05)]"><td class="py-3 px-3 text-[#4a5a6a]" colspan="5">No analysis recorded yet. Run a path analysis to see results here.</td></tr>';
-        return;
-      }
-      
-      let html = '';
-      alertHistory.forEach((item, index) => {
-        const resultClass = item.result === 'Congestion' ? 'text-[#ff3860] bg-[rgba(255,56,96,0.1)]' : 'text-[#00d4aa] bg-[rgba(0,212,170,0.1)]';
-        const resultText = item.result === 'Congestion' ? 'Rerouted' : 'Normal';
-        html += '<tr class="border-b border-[rgba(0,212,170,0.05)] hover:bg-[rgba(0,212,170,0.03)] transition-colors fade-in-up">' +
-          '<td class="py-3 px-3 font-mono text-[#7a8a9a]">' + item.time + '</td>' +
-          '<td class="text-center py-3 px-3 font-mono text-[#00d4aa]">' + item.bandwidth + '%</td>' +
-          '<td class="text-center py-3 px-3 font-mono text-[#ffd93d]">' + item.delay + 'ms</td>' +
-          '<td class="text-center py-3 px-3 font-mono text-[#ff3860]">' + item.packetLoss + '%</td>' +
-          '<td class="text-center py-3 px-3"><span class="px-2 py-1 rounded-full text-xs font-medium ' + resultClass + '">' + resultText + '</span></td>' +
-          '</tr>';
-      });
-      
-      historyTable.innerHTML = html;
-    }
-
-    // ========== REAL-TIME STATUS ==========
-    function updateRealtimeStatus(bandwidth, delay, packetLoss) {
-      const statusBandwidth = document.getElementById('statusBandwidth');
-      const statusDelay = document.getElementById('statusDelay');
-      const statusLoss = document.getElementById('statusLoss');
-      const statusBandwidthBar = document.getElementById('statusBandwidthBar');
-      const statusDelayBar = document.getElementById('statusDelayBar');
-      const statusLossBar = document.getElementById('statusLossBar');
-      const healthDot = document.getElementById('healthDot');
-      const healthLabel = document.getElementById('healthLabel');
-      const healthScore = document.getElementById('healthScore');
-
-      if (statusBandwidth) statusBandwidth.textContent = bandwidth + '%';
-      if (statusDelay) statusDelay.textContent = delay + 'ms';
-      if (statusLoss) statusLoss.textContent = packetLoss + '%';
-      
-      if (statusBandwidthBar) statusBandwidthBar.style.width = bandwidth + '%';
-      if (statusDelayBar) statusDelayBar.style.width = (delay / 200 * 100) + '%';
-      if (statusLossBar) statusLossBar.style.width = (packetLoss / 10 * 100) + '%';
-
-      let score = 100;
-      score -= Math.max(0, (bandwidth - 60) * 0.5);
-      score -= Math.max(0, (delay - 30) * 0.5);
-      score -= Math.max(0, (packetLoss - 1) * 10);
-      score = Math.max(0, Math.min(100, Math.round(score)));
-
-      if (healthDot && healthLabel && healthScore) {
+        // Update health
+        let score = 100;
+        score -= Math.max(0, (bw - 60) * 0.5);
+        score -= Math.max(0, (dl - 30) * 0.5);
+        score -= Math.max(0, (pl - 1) * 10);
+        score = Math.max(0, Math.min(100, Math.round(score)));
+        
+        const healthDot = document.getElementById('healthDot');
+        const healthLabel = document.getElementById('healthLabel');
+        const healthScore = document.getElementById('healthScore');
+        
         healthDot.classList.remove('health-excellent', 'health-good', 'health-warning', 'health-critical');
         
-        let healthText = 'Good';
         if (score >= 80) {
           healthDot.classList.add('health-excellent');
-          healthText = 'Excellent';
+          healthLabel.textContent = 'Excellent';
+          healthScore.textContent = 'Excellent';
           healthLabel.className = 'text-xs font-medium text-[#00d4aa]';
         } else if (score >= 60) {
           healthDot.classList.add('health-good');
-          healthText = 'Good';
+          healthLabel.textContent = 'Good';
+          healthScore.textContent = 'Good';
           healthLabel.className = 'text-xs font-medium text-[#38bdf8]';
         } else if (score >= 40) {
           healthDot.classList.add('health-warning');
-          healthText = 'Moderate';
+          healthLabel.textContent = 'Warning';
+          healthScore.textContent = 'Warning';
           healthLabel.className = 'text-xs font-medium text-[#ffd93d]';
         } else {
           healthDot.classList.add('health-critical');
-          healthText = 'Critical';
+          healthLabel.textContent = 'Critical';
+          healthScore.textContent = 'Critical';
           healthLabel.className = 'text-xs font-medium text-[#ff3860]';
         }
         
-        healthLabel.textContent = healthText;
-        healthScore.textContent = healthText;
-        healthScore.className = 'text-xl font-bold font-mono ' + 
-          (score >= 80 ? 'text-[#00d4aa]' : score >= 60 ? 'text-[#38bdf8]' : score >= 40 ? 'text-[#ffd93d]' : 'text-[#ff3860]');
-      }
-    }
-
-    // ========== PATH DISPLAY ==========
-    function updatePathDisplay(path, cost, isAlternate) {
-      const pathDisplay = document.getElementById('pathDisplay');
-      const pathCost = document.getElementById('pathCost');
-      const pathPanel = document.getElementById('pathPanel');
-      
-      if (!pathDisplay || !pathCost || !pathPanel) return;
-      
-      let html = '';
-      for (let i = 0; i < path.length; i++) {
-        const nodeColor = isAlternate ? 'bg-[rgba(255,217,61,0.15)] text-[#ffd93d]' : 'bg-[rgba(0,212,170,0.15)] text-[#00d4aa]';
-        html += '<span class="px-3 py-2 rounded-lg ' + nodeColor + ' font-mono text-sm">' + path[i] + '</span>';
-        if (i < path.length - 1) {
-          const arrowColor = isAlternate ? 'text-[#ffd93d]' : 'text-[#00d4aa]';
-          html += '<svg class="w-4 h-4 ' + arrowColor + '" fill="currentColor" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
-        }
-      }
-      
-      pathDisplay.innerHTML = html;
-      pathCost.textContent = 'Total Path Cost: ' + cost;
-      
-      if (isAlternate) {
-        pathPanel.className = 'mb-4 p-4 rounded-xl bg-[rgba(255,217,61,0.05)] border border-[rgba(255,217,61,0.2)]';
-      } else {
-        pathPanel.className = 'mb-4 p-4 rounded-xl bg-[rgba(0,212,170,0.05)] border border-[rgba(0,212,170,0.15)]';
-      }
-    }
-
-    // ========== PATH ANALYSIS LOGIC ==========
-    const predictionForm = document.getElementById('predictionForm');
-    const loadingState = document.getElementById('loadingState');
-    const resultState = document.getElementById('resultState');
-    const alertBox = document.getElementById('alertBox');
-    const alertIcon = document.getElementById('alertIcon');
-    const alertTitle = document.getElementById('alertTitle');
-    const alertSubtitle = document.getElementById('alertSubtitle');
-    const resultBandwidth = document.getElementById('resultBandwidth');
-    const resultDelay = document.getElementById('resultDelay');
-    const resultLoss = document.getElementById('resultLoss');
-    const riskBar = document.getElementById('riskBar');
-    const riskPercent = document.getElementById('riskPercent');
-
-    if (predictionForm) {
-      predictionForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+        // Update charts with calculated data
+        updateCharts(bw, dl, pl);
         
-        const bandwidth = Math.min(100, Math.max(0, parseFloat(document.getElementById('bandwidth').value) || 0));
-        const delay = Math.min(200, Math.max(0, parseFloat(document.getElementById('delay').value) || 0));
-        const packetLoss = Math.min(10, Math.max(0, parseFloat(document.getElementById('packetLoss').value) || 0));
-        
-        if (loadingState) loadingState.classList.remove('hidden');
-        if (resultState) resultState.classList.add('hidden');
-        
-        setTimeout(() => {
-          if (loadingState) loadingState.classList.add('hidden');
-          if (resultState) resultState.classList.remove('hidden');
-          
-          // Update metrics display
-          if (resultBandwidth) resultBandwidth.textContent = bandwidth + '%';
-          if (resultDelay) resultDelay.textContent = delay + 'ms';
-          if (resultLoss) resultLoss.textContent = packetLoss + '%';
-          
-          // Check congestion: bandwidth > 80 OR delay > 60 OR packetLoss > 5
-          const isCongestion = bandwidth > 80 || delay > 60 || packetLoss > 5;
-          
-          // Update graph weights based on network conditions
-          graph.updateWeights(bandwidth, delay, packetLoss);
-          
-          // Run Dijkstra algorithm
-          const result = graph.dijkstra('A', 'D');
-          
-          // Calculate risk
-          let risk = 0;
-          risk += (bandwidth / 100) * 35;
-          risk += (delay / 200) * 35;
-          risk += (packetLoss / 10) * 30;
-          risk = Math.min(100, Math.max(0, risk));
-          
-          if (riskBar) riskBar.style.width = risk + '%';
-          if (riskPercent) riskPercent.textContent = Math.round(risk) + '%';
-          
-          // Update real-time status
-          updateRealtimeStatus(bandwidth, delay, packetLoss);
-          
-          // Show alert
-          if (alertBox && alertIcon && alertTitle && alertSubtitle) {
-            if (isCongestion) {
-              alertBox.className = 'mb-4 p-4 rounded-xl border-2 border-[#ff3860] bg-[rgba(255,56,96,0.1)] transition-all duration-500 alert-shake';
-              alertIcon.innerHTML = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>';
-              alertIcon.className = 'w-10 h-10 rounded-lg bg-gradient-to-br from-[#ff3860] to-[#ff6b35] flex items-center justify-center flex-shrink-0';
-              alertTitle.textContent = 'Network Congestion Detected';
-              alertTitle.className = 'font-semibold text-sm text-[#ff3860]';
-              alertSubtitle.textContent = 'Traffic is being rerouted using Dijkstra Algorithm';
-              
-              // Update path display with alternate route
-              updatePathDisplay(result.path, result.cost, true);
-            } else {
-              alertBox.className = 'mb-4 p-4 rounded-xl border-2 border-[#00d4aa] bg-[rgba(0,212,170,0.1)] transition-all duration-500 fade-in-up';
-              alertIcon.innerHTML = '<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
-              alertIcon.className = 'w-10 h-10 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a88a] flex items-center justify-center flex-shrink-0';
-              alertTitle.textContent = 'Network Operating Normally';
-              alertTitle.className = 'font-semibold text-sm text-[#00d4aa]';
-              alertSubtitle.textContent = 'All parameters within safe limits';
-              
-              // Update path display with optimal route
-              updatePathDisplay(result.path, result.cost, false);
-            }
-          }
-          
-          // Add to history
-          addToHistory(bandwidth, delay, packetLoss, isCongestion ? 'Congestion' : 'Normal');
-          
-          // Update charts
-          if (bandwidthChart) {
-            bandwidthChart.data.datasets[0].data.shift();
-            bandwidthChart.data.datasets[0].data.push(bandwidth);
-            bandwidthChart.update('none');
-            const avg = bandwidthChart.data.datasets[0].data.reduce((a, b) => a + b, 0) / bandwidthChart.data.datasets[0].data.length;
-            const avgEl = document.getElementById('bandwidthAvg');
-            if (avgEl) avgEl.textContent = 'Avg: ' + avg.toFixed(1) + '%';
-          }
-          
-          if (delayChart) {
-            delayChart.data.datasets[0].data.shift();
-            delayChart.data.datasets[0].data.push(delay);
-            delayChart.update('none');
-            const avg = delayChart.data.datasets[0].data.reduce((a, b) => a + b, 0) / delayChart.data.datasets[0].data.length;
-            const avgEl = document.getElementById('delayAvg');
-            if (avgEl) avgEl.textContent = 'Avg: ' + avg.toFixed(1) + 'ms';
-          }
-          
-          if (packetLossChart) {
-            packetLossChart.data.datasets[0].data.shift();
-            packetLossChart.data.datasets[0].data.push(packetLoss);
-            packetLossChart.update('none');
-            const avg = packetLossChart.data.datasets[0].data.reduce((a, b) => a + b, 0) / packetLossChart.data.datasets[0].data.length;
-            const avgEl = document.getElementById('lossAvg');
-            if (avgEl) avgEl.textContent = 'Avg: ' + avg.toFixed(2) + '%';
-          }
-          
-          if (trafficChart) {
-            const newTraffic = trafficData.map(v => Math.max(5, v + (Math.random() - 0.5) * 10));
-            const total = newTraffic.reduce((a, b) => a + b, 0);
-            trafficChart.data.datasets[0].data = newTraffic.map(v => Math.round(v / total * 100));
-            trafficChart.update('none');
-          }
-          
-        }, 1500);
-      });
-    }
-
-    // Initial updates
-    updateInputBars();
-    updateRealtimeStatus(75, 45, 1.5);
-
-    // Smooth scroll
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function(e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      });
+      }, 1000);
     });
 
-    // Reduced motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (prefersReducedMotion.matches && animationId) {
-      cancelAnimationFrame(animationId);
+    function updateCharts(bw, dl, pl) {
+      // Bandwidth distribution based on input
+      const bwData = routers.map((r, i) => {
+        const base = [40, 55, 35, 50, 30][i];
+        return Math.min(100, base + (bw - 50) * (Math.random() * 0.3 + 0.7));
+      });
+      bwChart.data.datasets[0].data = bwData;
+      bwChart.update();
+      
+      // Delay by link based on input
+      const dlData = links.map(l => {
+        return Math.round((l.currentWeight || l.weight) * 2 + dl * 0.5 + Math.random() * 10);
+      });
+      dlChart.data.datasets[0].data = dlData;
+      dlChart.update();
+      
+      // Packet loss trend
+      const plData = [];
+      for (let i = 0; i < 6; i++) {
+        plData.push(Math.max(0, pl + (Math.random() - 0.5) * pl * 0.5));
+      }
+      plChart.data.datasets[0].data = plData;
+      plChart.update();
+      
+      // Traffic distribution
+      const tfData = routers.map((r, i) => {
+        const base = [25, 20, 15, 25, 15][i];
+        return Math.max(5, base + (bw - 50) * 0.2 * (Math.random() - 0.3));
+      });
+      const total = tfData.reduce((a, b) => a + b, 0);
+      tfChart.data.datasets[0].data = tfData.map(v => Math.round(v / total * 100));
+      tfChart.update();
     }
+
+    function playSiren() {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AC();
+        if (ctx.state === 'suspended') ctx.resume();
+        
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        
+        const now = ctx.currentTime;
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 2);
+        
+        for (let i = 0; i < 4; i++) {
+          const t = now + i * 0.5;
+          osc.frequency.setValueAtTime(500, t);
+          osc.frequency.linearRampToValueAtTime(1000, t + 0.25);
+          osc.frequency.linearRampToValueAtTime(500, t + 0.5);
+        }
+        
+        osc.start(now);
+        osc.stop(now + 2.5);
+      } catch (e) {}
+    }
+
+    // Initial setup
+    updateInputBars();
+    updateLinkWeights();
   </script>
 </body>
 </html>
